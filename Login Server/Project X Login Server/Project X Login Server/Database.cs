@@ -47,18 +47,20 @@ namespace Project_X_Login_Server
             catch (MySqlException sqle)
             {
                 // Output error
+                Log.log("An SQL error occured when attempting to query the database. > " + sqle.Message, Log.LogType.ERROR);
                 return null;
             }
             catch (Exception e)
             {
                 // Output error
+                Log.log("An generic error occured when attempting to query the database. > " + e.Message, Log.LogType.ERROR);
                 return null;
             }
         }
 
         public string RequestAuthenticationCode()
         {
-            MySqlDataReader reader = QueryDatabase("SELECT [Authentication_Code] FROM tbl_Authentication;");
+            MySqlDataReader reader = QueryDatabase("SELECT Authentication_Code FROM tbl_Authentication;");
 
             if (reader.Read())
             {

@@ -12,6 +12,8 @@ namespace Project_X_Login_Server
     {
         public static Network instance;
 
+        public static bool Running = false;
+
         #region TCP
         private const int MaxConnections = 100;
         private const int Port = 5600;
@@ -21,10 +23,13 @@ namespace Project_X_Login_Server
         #endregion
 
         #region Connections
-        public Game_Server GameServer;
+        public Dictionary<string, Server> Servers = new Dictionary<string, Server>();
+
         public const double SecondsToAuthenticateBeforeDisconnect = 5.0;
         public string AuthenticationCode = "";
         public bool GameServerAuthenticated = false;
+        public bool SyncServerAuthenticated = false;
+        private int ServerNumber = 0;
         public Client[] Clients = new Client[MaxConnections];
         #endregion
 
@@ -38,15 +43,14 @@ namespace Project_X_Login_Server
             AuthenticationCode = Database.instance.RequestAuthenticationCode();
             if (AuthenticationCode == "")
             {
-                Console.WriteLine("Critical Error! Authentication code could not be loaded.");
+                Log.log("Critical Error! Authentication code could not be loaded.", Log.LogType.ERROR);
             }
             else
             {
-                Console.WriteLine("Authentication code loaded.");
+                Log.log("Authentication code loaded.", Log.LogType.SUCCESS);
             }
             try
             {
-                GameServer = new Game_Server(ConnectionType.GAMESERVER, 0);
                 for (int i = 0; i < MaxConnections; i++)
                 {
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
@@ -55,8 +59,10 @@ namespace Project_X_Login_Server
             }
             catch (Exception e)
             {
+                Log.log("An error occurred when attempting to start the server. > " + e.Message, Log.LogType.ERROR);
                 return false;
             }
+            Running = true;
             return true;
         }
 
@@ -73,18 +79,19 @@ namespace Project_X_Login_Server
         {
             TcpClient socket = Listener.EndAcceptTcpClient(result);
             socket.NoDelay = false;
-            if (GameServer.Socket == null)
+            if (!GameServerAuthenticated || !SyncServerAuthenticated)
             {
-                // Allow the game server to connect
-                GameServer.Connected = true;
-                GameServer.Socket = socket;
-                GameServer.IP = socket.Client.RemoteEndPoint.ToString();
-                GameServer.Start();
-                Console.WriteLine("Contact from potential game server made: ");
-                Console.WriteLine("IP: " + GameServer.IP);
+                Servers.Add(ServerNumber.ToString(), new Server(ConnectionType.SYNCSERVER, ServerNumber));
+                Servers[ServerNumber.ToString()].Connected = true;
+                Servers[ServerNumber.ToString()].Socket = socket;
+                Servers[ServerNumber.ToString()].IP = socket.Client.RemoteEndPoint.ToString();
+                Servers[ServerNumber.ToString()].Start();
+                Console.WriteLine("Contact from potential server made: ");
+                Console.WriteLine("IP: " + Servers[ServerNumber.ToString()].IP);
                 Console.WriteLine("Waiting for authentication packet..");
+                ++ServerNumber;
             }
-            else if (GameServerAuthenticated)
+            else
             {
                 for (int i = 0; i < MaxConnections; i++)
                 {
@@ -97,6 +104,16 @@ namespace Project_X_Login_Server
                         Console.WriteLine("A client has connected to the server:");
                         Console.WriteLine("IP: " + Clients[i].IP);
                     }
+                }
+            }
+        }
+        public void CheckAuthentication()
+        {
+            foreach (KeyValuePair<string, Server> server in Servers)
+            {
+                if (!(server.Key == "Game Server" || server.Key == "Synchronization Server") && !server.Value.Authenticated)
+                {
+                    Servers.Remove(server.Key);
                 }
             }
         }

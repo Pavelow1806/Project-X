@@ -18,8 +18,24 @@ namespace Project_X_Login_Server
         static void Main(string[] args)
         {
             Console.Title = "Project X - Login Server";
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.Clear();
 
-            nw.LaunchServer();
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("                            Project X |");
+            Console.WriteLine("                         Login Server |");
+            Console.WriteLine("                                 v1.0 |");
+            Console.WriteLine();
+            Console.WriteLine("                         Starting server..");
+            Console.WriteLine();
+
+            if (!nw.LaunchServer())
+            {
+                Log.log("Server failed to launch, type launch to attempt to relaunch the server.", Log.LogType.SYSTEM);
+            }
 
             consoleThread = new Thread(new ThreadStart(ConsoleLoop));
             consoleThread.Start();
@@ -41,6 +57,22 @@ namespace Project_X_Login_Server
                 else if (line == "?")
                 {
                     // Output all commands available
+                }
+                else if (line == "launch")
+                {
+                    if (!Network.Running)
+                    {
+                        Log.log("Launching server..", Log.LogType.SYSTEM);
+
+                        if (!nw.LaunchServer())
+                        {
+                            Log.log("Server failed to launch, type launch to attempt to relaunch the server.", Log.LogType.SYSTEM);
+                        }
+                    }
+                    else
+                    {
+                        Log.log("Server already running.", Log.LogType.WARNING);
+                    }
                 }
             }
         }

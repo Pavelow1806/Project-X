@@ -14,19 +14,19 @@ namespace Project_X_Login_Server
         RegistrationRequest,
         CharacterListRequest
     }
-    public enum ServerProcessPacketNumbers
+    public enum GameServerProcessPacketNumbers
     {
         Invalid,
-        AuthenticateGameServer
+        AuthenticateServer
     }
-    class ProcessData
+    public enum SyncServerProcessPacketNumbers
     {
-        private static ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-
-        private static byte[] Data = null;
-        private static int Index = -1;
-
-        public static void processData(int index, byte[] data)
+        Invalid,
+        AuthenticateServer
+    }
+    class ProcessData : Data
+    {
+        public static void processData(int index, byte[] Data)
         {
             buffer.WriteBytes(data);
 
@@ -35,25 +35,33 @@ namespace Project_X_Login_Server
 
             Type thisType = Type.GetType("ProcessData");
 
-            Data = data;
-
-            if (Source == ConnectionType.CLIENT)
+            data = Data;
+            switch (Source)
             {
-                if (PacketNumber == 0 || !Enum.IsDefined(typeof(ClientProcessPacketNumbers), PacketNumber) || Network.instance.Clients[index].Socket == null)
-                {
-                    return;
-                }
-
-                thisType.InvokeMember(((ClientProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, null);
-            }
-            else if (Source == ConnectionType.GAMESERVER)
-            {
-                if (PacketNumber == 0 || !Enum.IsDefined(typeof(ServerProcessPacketNumbers), PacketNumber) || Network.instance.GameServer.Socket == null)
-                {
-                    return;
-                }
-
-                thisType.InvokeMember(((ServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, null);
+                case ConnectionType.GAMESERVER:
+                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(GameServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[index.ToString()].Socket == null)
+                    {
+                        return;
+                    }
+                    Log.log("Packet Received [#" + PacketNumber.ToString("000") + " N" + ((GameServerProcessPacketNumbers)PacketNumber).ToString() + "] from Game Server, Processing response..", Log.LogType.RECEIVED);
+                    object[] obj = new object[1];
+                    obj[0] = Source;
+                    thisType.InvokeMember(((GameServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, obj);
+                    break;
+                case ConnectionType.CLIENT:
+                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(ClientProcessPacketNumbers), PacketNumber) || Network.instance.Clients[index].Socket == null)
+                    {
+                        return;
+                    }
+                    Log.log("Packet Received [#" + PacketNumber.ToString("000") + " N" + ((ClientProcessPacketNumbers)PacketNumber).ToString() + "] from Client Index " + Index.ToString() + ", Processing response..", Log.LogType.RECEIVED);
+                    thisType.InvokeMember(((ClientProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, null);
+                    break;
+                case ConnectionType.LOGINSERVER:
+                    break;
+                case ConnectionType.SYNCSERVER:
+                    break;
+                default:
+                    break;
             }
             
             Reset();
@@ -123,22 +131,37 @@ namespace Project_X_Login_Server
         }
         #endregion
 
-        #region Game Server Communication
-        private static void AuthenticateGameServer()
+        #region Server Communication
+        private static void AuthenticateServer(ConnectionType type)
         {
             if (buffer.ReadString() == Network.instance.AuthenticationCode)
             {
-                // Confirmed to be the game server, proceed with unblocking the client communication channels
-                Network.instance.GameServerAuthenticated = true;
+                if (type == ConnectionType.GAMESERVER)
+                {
+                    // Confirmed to be the game server, proceed with unblocking the client communication channels
+                    Network.instance.GameServerAuthenticated = true;
+                    Network.instance.Servers[Index.ToString()].Authenticated = true;
+                    Network.instance.Servers.Add("Game Server", Network.instance.Servers[Index.ToString()]);
+                    Network.instance.Servers.Remove(Index.ToString());
+                }
+                else if (type == ConnectionType.SYNCSERVER)
+                {
+                    // Confirmed to be the sync server, proceed with unblocking the client communication channels
+                    Network.instance.SyncServerAuthenticated = true;
+                    Network.instance.Servers[Index.ToString()].Authenticated = true;
+                    Network.instance.Servers.Add("Synchronization Server", Network.instance.Servers[Index.ToString()]);
+                    Network.instance.Servers.Remove(Index.ToString());
+                }
             }
         }
         #endregion
 
-        private static void Reset()
-        {
-            Index = -1;
-            Data = null;
-            buffer = new ByteBuffer.ByteBuffer();
-        }
+        #region Game Server Communication
+
+        #endregion
+
+        #region Synchronization Server Communication
+
+        #endregion
     }
 }

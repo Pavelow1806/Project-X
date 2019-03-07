@@ -7,13 +7,15 @@ using System.Threading;
 
 namespace Project_X_Login_Server
 {
-    class Game_Server : Connection
+    class Server : Connection
     {
         private DateTime TimeUntilRelease = default(DateTime);
         private Thread AuthenticationThread;
 
-        public Game_Server(ConnectionType type, int id) :
-            base (type, id)
+        public bool Authenticated = false;
+
+        public Server(ConnectionType type, int id) :
+            base(type, id)
         {
 
         }
@@ -37,13 +39,13 @@ namespace Project_X_Login_Server
             {
 
             }
-            if (Network.instance.GameServerAuthenticated)
+            if (Authenticated)
             {
-                Console.WriteLine("Authentication of Game Server successful, ready for client connections.");
+                Log.log("Authentication of Game Server successful, " + ((Network.instance.SyncServerAuthenticated) ? "ready for client connections." : "waiting for synchronization server."), Log.LogType.CONNECTION);
             }
             else
             {
-                Console.WriteLine("Authentication of Game Server failed, releasing socket.");
+                Log.log("Authentication of Server failed, releasing socket.", Log.LogType.ERROR);
                 Close();
             }
             AuthenticationThread.Join();

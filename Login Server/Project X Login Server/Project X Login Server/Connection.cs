@@ -11,7 +11,9 @@ namespace Project_X_Login_Server
     public enum ConnectionType
     {
         GAMESERVER,
-        CLIENT
+        CLIENT,
+        LOGINSERVER,
+        SYNCSERVER
     }
     class Connection
     {
@@ -115,7 +117,7 @@ namespace Project_X_Login_Server
                 Buffer.BlockCopy(ReadBuff, 0, Bytes, 0, ReadBytes);
 
                 // Process the packet
-                ProcessData.processData(Type, Index, Bytes);
+                ProcessData.processData(Index, Bytes);
 
                 Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, OnReceiveData, null);
             }
