@@ -16,14 +16,14 @@ namespace Project_X_Login_Server
 
         #region TCP
         private const int MaxConnections = 100;
-        private const int Port = 5600;
+        private const int Port = 5500;
         private TcpListener Listener = new TcpListener(IPAddress.Any, Port);
 
         public const int BufferSize = 4096;
         #endregion
 
         #region Connections
-        public Dictionary<string, Server> Servers = new Dictionary<string, Server>();
+        public Dictionary<ConnectionType, Server> Servers = new Dictionary<ConnectionType, Server>();
 
         public const double SecondsToAuthenticateBeforeDisconnect = 5.0;
         public string AuthenticationCode = "";
@@ -56,6 +56,7 @@ namespace Project_X_Login_Server
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
                 }
                 Listener.Start();
+                StartAccept();
             }
             catch (Exception e)
             {
@@ -81,13 +82,15 @@ namespace Project_X_Login_Server
             socket.NoDelay = false;
             if (!GameServerAuthenticated || !SyncServerAuthenticated)
             {
-                Servers.Add(ServerNumber.ToString(), new Server(ConnectionType.SYNCSERVER, ServerNumber));
-                Servers[ServerNumber.ToString()].Connected = true;
-                Servers[ServerNumber.ToString()].Socket = socket;
-                Servers[ServerNumber.ToString()].IP = socket.Client.RemoteEndPoint.ToString();
-                Servers[ServerNumber.ToString()].Start();
+                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber));
+                Servers[(ConnectionType)ServerNumber].Connected = true;
+                Servers[(ConnectionType)ServerNumber].Socket = socket;
+                Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();
+                Servers[(ConnectionType)ServerNumber].Username = "System";
+                Servers[(ConnectionType)ServerNumber].SessionID = "System";
+                Servers[(ConnectionType)ServerNumber].Start();
                 Console.WriteLine("Contact from potential server made: ");
-                Console.WriteLine("IP: " + Servers[ServerNumber.ToString()].IP);
+                Console.WriteLine("IP: " + Servers[(ConnectionType)ServerNumber].IP);
                 Console.WriteLine("Waiting for authentication packet..");
                 ++ServerNumber;
             }
@@ -109,9 +112,9 @@ namespace Project_X_Login_Server
         }
         public void CheckAuthentication()
         {
-            foreach (KeyValuePair<string, Server> server in Servers)
+            foreach (KeyValuePair<ConnectionType, Server> server in Servers)
             {
-                if (!(server.Key == "Game Server" || server.Key == "Synchronization Server") && !server.Value.Authenticated)
+                if (!(server.Key == ConnectionType.GAMESERVER || server.Key == ConnectionType.SYNCSERVER) && !server.Value.Authenticated)
                 {
                     Servers.Remove(server.Key);
                 }

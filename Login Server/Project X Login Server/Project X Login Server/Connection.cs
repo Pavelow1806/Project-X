@@ -84,12 +84,19 @@ namespace Project_X_Login_Server
 
         private void StartAccept()
         {
-            if (Stream != null)
+            try
             {
-                if (Connected)
+                if (Stream != null)
                 {
-                    Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, HandleAsyncConnection, null);
+                    if (Connected)
+                    {
+                        Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, HandleAsyncConnection, null);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.log("An error occurred when beginning the streams read. > " + e.Message, Log.LogType.ERROR);
             }
         }
         private void HandleAsyncConnection(IAsyncResult result)
@@ -124,6 +131,7 @@ namespace Project_X_Login_Server
             catch (Exception e)
             {
                 // Output error message
+                Log.log("An error occured while receiving data. > " + e.Message, Log.LogType.ERROR);
 
                 // Send DB updates
                 Database.instance.LogActivity(Username, Activity.DISCONNECT, SessionID);

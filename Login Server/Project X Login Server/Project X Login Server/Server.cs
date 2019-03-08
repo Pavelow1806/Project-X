@@ -35,13 +35,26 @@ namespace Project_X_Login_Server
         }
         public void CheckAuthentication()
         {
-            while (DateTime.Now < TimeUntilRelease || !Network.instance.GameServerAuthenticated)
+            while (DateTime.Now < TimeUntilRelease || !Authenticated)
             {
 
             }
             if (Authenticated)
             {
-                Log.log("Authentication of Game Server successful, " + ((Network.instance.SyncServerAuthenticated) ? "ready for client connections." : "waiting for synchronization server."), Log.LogType.CONNECTION);
+                string msg = "";
+                if (Network.instance.SyncServerAuthenticated && Network.instance.GameServerAuthenticated)
+                {
+                    msg = "ready for client connections.";
+                }
+                else if (Network.instance.SyncServerAuthenticated && !Network.instance.GameServerAuthenticated)
+                {
+                    msg = "waiting for game server.";
+                }
+                else if (!Network.instance.SyncServerAuthenticated && Network.instance.GameServerAuthenticated)
+                {
+                    msg = "waiting for synchronization server.";
+                }
+                Log.log("Authentication of " + Type.ToString() + " successful, " + msg, Log.LogType.SUCCESS);
             }
             else
             {

@@ -28,27 +28,13 @@ namespace Project_X_Login_Server
                 switch (destination)
                 {
                     case ConnectionType.GAMESERVER:
-                        if (Network.instance.GameServerAuthenticated)
-                        {
-                            Network.instance.Servers["Game Server"].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
-                        }
-                        else
-                        {
-                            Network.instance.Servers[Index.ToString()].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
-                        }
+                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
                         break;
                     case ConnectionType.CLIENT:
                         Network.instance.Clients[Index].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
                         break;
                     case ConnectionType.SYNCSERVER:
-                        if (Network.instance.SyncServerAuthenticated)
-                        {
-                            Network.instance.Servers["Synchronization Server"].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
-                        }
-                        else
-                        {
-                            Network.instance.Servers[Index.ToString()].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
-                        }
+                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
                         break;
                     default:
                         break;

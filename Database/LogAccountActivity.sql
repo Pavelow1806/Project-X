@@ -23,4 +23,4 @@ BEGIN
 END //
 DELIMITER ;
 
-CALL LogAccountActivity("Pavelow", 1, "Test", 1);
+CALL LogAccountActivity("Pavelow", 1, "Test", 0);

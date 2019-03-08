@@ -19,7 +19,8 @@ namespace Project_X_Login_Server
         LOGOUT,
         DISCONNECT,
         KICK,
-        ACCOUNTCREATED
+        ACCOUNTCREATED,
+        AUTHENTICATED
     }
     class Database
     {
@@ -61,13 +62,15 @@ namespace Project_X_Login_Server
         public string RequestAuthenticationCode()
         {
             MySqlDataReader reader = QueryDatabase("SELECT Authentication_Code FROM tbl_Authentication;");
-
             if (reader.Read())
             {
-                return reader["Authentication_Code"].ToString();
+                string AuthenticationCode = reader["Authentication_Code"].ToString();
+                reader.Close();
+                return AuthenticationCode;
             }
             else
             {
+                reader.Close();
                 return "";
             }
         }
@@ -149,16 +152,18 @@ namespace Project_X_Login_Server
 
         public Response LogActivity(string username, Activity activity, string sessionid)
         {
-            MySqlDataReader reader = QueryDatabase("CALL LogAccountActivity('" + username + "', " + (int)activity + "', '" + sessionid + "');");
+            MySqlDataReader reader = QueryDatabase(@"CALL LogAccountActivity(""" + username + @""", " + (int)activity + @", """ + sessionid + @""", 1);");
 
             if (reader != null)
             {
                 if (reader.Read())
                 {
+                    reader.Close();
                     return Response.SUCCESSFUL;
                 }
                 else
                 {
+                    reader.Close();
                     return Response.UNSUCCESSFUL;
                 }
             }
