@@ -74,12 +74,31 @@ namespace Project_X_Synchronization_Server
         
         public Response Load()
         {
-            // Get database tables
-
-            // For each table
-            // Get tables fields and data types
-
-            // Load data
+            try
+            {
+                reader = QueryDatabase("SELECT * FROM tbl_Accounts;");
+                while (reader.Read())
+                {
+                    Data.tbl_Accounts.Add(new _Accounts(reader.GetInt32("Account_ID"), reader.GetString("Username"), reader.GetString("Email"), reader.GetString("Password"), reader.GetBoolean("Logged_In")));
+                }
+                reader = QueryDatabase("SELECT * FROM tbl_Activity;");
+                while (reader.Read())
+                {
+                    Data.tbl_Activity.Add(new _Activity(reader.GetInt32("Activity_ID"), reader.GetInt32("Account_ID"), reader.GetInt32("Activity_Type"), reader.GetDateTime("DTStamp"), reader.GetString("Session_ID")));
+                }
+                reader = QueryDatabase("SELECT * FROM tbl_Characters;");
+                while (reader.Read())
+                {
+                    Data.tbl_Characters.Add(new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"),
+                    reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z")));
+                }
+                return Response.SUCCESSFUL;
+            }
+            catch (Exception e)
+            {
+                Log.log("An error occurred when attempting to load data from the database. > " + e.Message, Log.LogType.ERROR);
+                return Response.ERROR;
+            }
         }
     }
 }

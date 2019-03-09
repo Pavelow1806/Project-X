@@ -12,11 +12,11 @@ namespace Project_X_Synchronization_Server
     }
     class Data
     {
+        #region Data Send/Receive Information
         protected static ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-
         public static byte[] data = null;
-
         protected static int Index = -1;
+        #endregion
 
         public static void Reset()
         {
@@ -24,27 +24,73 @@ namespace Project_X_Synchronization_Server
             data = null;
             Index = -1;
         }
-    }
 
-    class Table
+        #region Table Storage
+        public void DownloadCache()
+        {
+            Database.instance.Load();
+        }
+
+        // Accounts table
+        public static List<_Accounts> tbl_Accounts = new List<_Accounts>();
+
+        //Activity table
+        public static List<_Activity> tbl_Activity = new List<_Activity>();
+
+        // Characters table
+        public static List<_Characters> tbl_Characters = new List<_Characters>();
+        #endregion
+    }
+    class _Accounts
     {
-        private Dictionary<string, List<Type>> _table = new Dictionary<string, List<Type>>();
-        public Dictionary<string, List<Type>> table
+        public int Account_ID = 0;
+        public string Username = "";
+        public string Email = "";
+        public string Password = "";
+        public bool Logged_In = false;
+        public _Accounts(int account_ID, string username, string email, string password, bool logged_In)
         {
-            set
-            {
-                _table = value;
-            }
+            Account_ID = account_ID;
+            Username = username;
+            Email = email;
+            Password = password;
+            Logged_In = logged_In;
         }
-        public List<string> GetFieldNames()
+    }
+    class _Activity
+    {
+        public int Activity_ID = 0;
+        public int Account_ID = 0;
+        public int Activity_Type = 0;
+        public DateTime DTStamp = default(DateTime);
+        public string Session_ID = "";
+        public _Activity(int activity_ID, int account_ID, int activity_Type, DateTime dTStamp, string session_ID)
         {
-            List<string> result = new List<string>();
-            foreach (KeyValuePair<string, List<Type>> col in _table)
-            {
-                result.Add(col.Key);
-            }
-            return result;
+            Activity_ID = activity_ID;
+            Account_ID = account_ID;
+            Activity_Type = activity_Type;
+            DTStamp = dTStamp;
+            Session_ID = session_ID;
         }
-        public int GetInt
+    }
+    class _Characters
+    {
+        public int Character_ID = 0;
+        public int Account_ID = 0;
+        public string Character_Name = "";
+        public int Character_Level = 0;
+        public float Pos_X = 0.0f;
+        public float Pos_Y = 0.0f;
+        public float Pos_z = 0.0f;
+        public _Characters(int character_ID, int account_ID, string character_Name, int character_Level, float pos_X, float pos_Y, float pos_Z)
+        {
+            Character_ID = character_ID;
+            Account_ID = account_ID;
+            Character_Name = character_Name;
+            Character_Level = character_Level;
+            Pos_X = pos_X;
+            Pos_Y = pos_Y;
+            Pos_z = pos_Z;
+        }
     }
 }
