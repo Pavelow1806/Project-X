@@ -26,6 +26,10 @@ namespace Project_X_Login_Server
     {
         public static Database instance;
 
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
+
         MySqlConnection Connection = null;
         MySqlCommand Command = null;
         MySqlDataReader reader = null;
@@ -40,22 +44,30 @@ namespace Project_X_Login_Server
 
         private MySqlDataReader QueryDatabase(string query)
         {
-            try
+            lock (lockObj)
             {
-                Command = new MySqlCommand(query, Connection);
-                return Command.ExecuteReader();
-            }
-            catch (MySqlException sqle)
-            {
-                // Output error
-                Log.log("An SQL error occured when attempting to query the database. > " + sqle.Message, Log.LogType.ERROR);
-                return null;
-            }
-            catch (Exception e)
-            {
-                // Output error
-                Log.log("An generic error occured when attempting to query the database. > " + e.Message, Log.LogType.ERROR);
-                return null;
+                try
+                {
+                    Command = new MySqlCommand(query, Connection);
+                    if (reader != null)
+                    {
+                        reader.Close();
+                        reader = null;
+                    }
+                    return Command.ExecuteReader();
+                }
+                catch (MySqlException sqle)
+                {
+                    // Output error
+                    Log.log("An SQL error occured when attempting to query the database. > " + sqle.Message, Log.LogType.ERROR);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    // Output error
+                    Log.log("An generic error occured when attempting to query the database. > " + e.Message, Log.LogType.ERROR);
+                    return null;
+                }
             }
         }
 
@@ -66,11 +78,13 @@ namespace Project_X_Login_Server
             {
                 string AuthenticationCode = reader["Authentication_Code"].ToString();
                 reader.Close();
+                reader = null;
                 return AuthenticationCode;
             }
             else
             {
                 reader.Close();
+                reader = null;
                 return "";
             }
         }
@@ -82,10 +96,14 @@ namespace Project_X_Login_Server
             {
                 if (reader.Read())
                 {
+                    reader.Close();
+                    reader = null;
                     return Response.SUCCESSFUL;
                 }
                 else
                 {
+                    reader.Close();
+                    reader = null;
                     return Response.UNSUCCESSFUL;
                 }
             }
@@ -103,11 +121,15 @@ namespace Project_X_Login_Server
                 if (reader.Read())
                 {
                     response = reader["Result"].ToString();
+                    reader.Close();
+                    reader = null;
                     return Response.SUCCESSFUL;
                 }
                 else
                 {
                     response = "An error occured when attempting to register.";
+                    reader.Close();
+                    reader = null;
                     return Response.UNSUCCESSFUL;
                 }
             }
@@ -137,10 +159,14 @@ namespace Project_X_Login_Server
                             )
                         );
                     }
+                    reader.Close();
+                    reader = null;
                     return Response.SUCCESSFUL;
                 }
                 else
                 {
+                    reader.Close();
+                    reader = null;
                     return Response.UNSUCCESSFUL;
                 }
             }
@@ -159,11 +185,13 @@ namespace Project_X_Login_Server
                 if (reader.Read())
                 {
                     reader.Close();
+                    reader = null;
                     return Response.SUCCESSFUL;
                 }
                 else
                 {
                     reader.Close();
+                    reader = null;
                     return Response.UNSUCCESSFUL;
                 }
             }

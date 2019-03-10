@@ -17,55 +17,103 @@ namespace Project_X_Login_Server
             CONNECTION,
             SYSTEM,
             SUCCESS,
-            GENERAL
+            GENERAL,
+            START,
+            HELP,
+            CACHE
         }
-
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
         private const ConsoleColor DefaultColour = ConsoleColor.Black;
 
         private const ConsoleColor ErrorColour = ConsoleColor.Red;
         private const ConsoleColor WarningColour = ConsoleColor.DarkRed;
         private const ConsoleColor SentColour = ConsoleColor.Cyan;
-        private const ConsoleColor ReceivedColour = ConsoleColor.DarkMagenta;
+        private const ConsoleColor ReceivedColour = ConsoleColor.Magenta;
         private const ConsoleColor ConnectionColour = ConsoleColor.DarkYellow;
-        private const ConsoleColor SystemColour = ConsoleColor.Gray;
+        private const ConsoleColor SystemColour = ConsoleColor.DarkGray;
         private const ConsoleColor SuccessColour = ConsoleColor.DarkGreen;
+        private const ConsoleColor StartColour = ConsoleColor.Black;
+        private const ConsoleColor HelpColour = ConsoleColor.DarkYellow;
+        private const ConsoleColor CacheColour = ConsoleColor.DarkBlue;
 
-        public static void log(string Message, LogType type = LogType.GENERAL)
+        public static int log(string Message, LogType type = LogType.GENERAL)
         {
-            if (type != LogType.GENERAL)
+            lock (lockObj)
             {
+                if (type != LogType.GENERAL)
+                {
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, Console.CursorTop - 1);
+                }
+                if (type != LogType.START)
+                {
+                    Console.Write("     " + DateTime.Now.ToString() + " : ");
+                }
+                Console.ForegroundColor = SetColour(type);
+                int currentLine = Console.CursorTop;
+                Console.WriteLine(Message);
+                Console.ForegroundColor = DefaultColour;
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(new string(' ', Console.WindowWidth));
-                Console.SetCursorPosition(0, Console.CursorTop - 1);
+                Console.Write("     " + DateTime.Now.ToString() + " : Admin>");
+                return currentLine;
             }
-            Console.Write(DateTime.Now.ToString() + " : ");
+        }
+        public static void log(int LineNumber, string Message, LogType type = LogType.GENERAL)
+        {
+            lock (lockObj)
+            {
+                int x = Console.CursorLeft;
+                int y = Console.CursorTop;
+                if (type != LogType.GENERAL)
+                {
+                    Console.SetCursorPosition(0, LineNumber);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, LineNumber);
+                }
+                if (type != LogType.START)
+                {
+                    Console.Write("     " + DateTime.Now.ToString() + " : ");
+                }
+                Console.ForegroundColor = SetColour(type);
+                Console.WriteLine(Message);
+                Console.ForegroundColor = DefaultColour;
+                Console.SetCursorPosition(x, y);
+            }
+        }
+        public static void WriteUser()
+        {
+            Console.Write("     " + DateTime.Now.ToString() + " : Admin>");
+        }
+        private static ConsoleColor SetColour(LogType type)
+        {
             switch (type)
             {
                 case LogType.ERROR:
-                    Console.ForegroundColor = ErrorColour;
-                    break;
+                    return ErrorColour;
                 case LogType.WARNING:
-                    Console.ForegroundColor = WarningColour;
-                    break;
+                    return WarningColour;
                 case LogType.SENT:
-                    Console.ForegroundColor = SentColour;
-                    break;
+                    return SentColour;
                 case LogType.RECEIVED:
-                    Console.ForegroundColor = ReceivedColour;
-                    break;
+                    return ReceivedColour;
                 case LogType.CONNECTION:
-                    Console.ForegroundColor = ConnectionColour;
-                    break;
+                    return ConnectionColour;
                 case LogType.SYSTEM:
-                    Console.ForegroundColor = SystemColour;
-                    break;
+                    return SystemColour;
                 case LogType.SUCCESS:
-                    Console.ForegroundColor = SuccessColour;
-                    break;
+                    return SuccessColour;
+                case LogType.START:
+                    return StartColour;
+                case LogType.HELP:
+                    return HelpColour;
+                case LogType.CACHE:
+                    return CacheColour;
+                default:
+                    return DefaultColour;
             }
-            Console.WriteLine(Message);
-            Console.ForegroundColor = DefaultColour;
-            Console.Write(DateTime.Now.ToString() + " : Admin>");
         }
     }
 }

@@ -1,41 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Threading;
+using System.IO;
+using System.Net.Sockets;
 
-namespace Project_X_Synchronization_Server
+namespace Project_X_Game_Server
 {
-    public enum ConnectionType
+    class Server : Connection
     {
-        GAMESERVER,
-        CLIENT,
-        LOGINSERVER,
-        SYNCSERVER
-    }
-    class Connection
-    {
-        public ConnectionType Type;
+        private DateTime TimeUntilRelease = default(DateTime);
 
-        #region Connection
-        public int Index = -1;
+        #region Additional TCP Requirements for Server Listening
         public int Port = 0;
-        public string IP = "";
-        public bool Connected = false;
-        public DateTime ConnectedTime = default(DateTime);
-        #endregion
-
-        #region Network
-        public TcpClient Socket = null;
-        public NetworkStream Stream = null;
         public StreamReader Reader = null;
         public StreamWriter Writer = null;
-        public byte[] asyncBuff = null;
         public bool ShouldHandleData = false;
+        public byte[] asyncBuff = null;
         #endregion
 
         #region ConnectionAttempts
@@ -46,6 +29,7 @@ namespace Project_X_Synchronization_Server
         #endregion
 
         #region Threads
+        private Thread AuthenticationThread;
         private static Thread ConnectionThread;
         #endregion
 
@@ -55,20 +39,67 @@ namespace Project_X_Synchronization_Server
 
         int LineNumber = -1;
 
-        public Connection(ConnectionType type, int id, int port, string ip)
+        public Server(ConnectionType type, int id, int port, string ip) :
+            base(type, id)
         {
-            IP = ip;
-            Type = type;
-            Index = id;
             Port = port;
+            IP = ip;
         }
 
-        public void Start()
+        public override void Start()
         {
-            ConnectionThread = new Thread(new ThreadStart(AttemptConnect));
-            ConnectionThread.Start();
+            if (Type == ConnectionType.SYNCSERVER)
+            {
+                TimeUntilRelease = ConnectedTime.AddSeconds(Network.SecondsToAuthenticateBeforeDisconnect);
+                AuthenticationThread = new Thread(new ThreadStart(CheckAuthentication));
+                AuthenticationThread.Start();
+                ConnectionThread = new Thread(new ThreadStart(AttemptConnect));
+                ConnectionThread.Start();
+            }
+            else
+            {
+                base.Start();
+            }
         }
 
+        public override void Close()
+        {
+            base.Close();
+            if (Reader != null)
+            {
+                Reader.Close();
+                Reader = null;
+            }
+            if (Writer != null)
+            {
+                Writer.Close();
+                Writer = null;
+            }
+            ConnectionAttemptCount = 0;
+            Authenticated = false;
+        }
+        public void CheckAuthentication()
+        {
+            while (DateTime.Now < TimeUntilRelease || !Authenticated)
+            {
+
+            }
+            if (Authenticated)
+            {
+                string msg = "";
+                if (Network.instance.SyncServerAuthenticated)
+                {
+                    msg = "ready for client connections.";
+                }
+                Log.log("Authentication of " + Type.ToString() + " successful, " + msg, Log.LogType.SUCCESS);
+            }
+            else
+            {
+                Log.log("Authentication of Server failed, releasing socket.", Log.LogType.ERROR);
+                Close();
+            }
+            AuthenticationThread.Join();
+        }
         public void AttemptConnect()
         {
             while (!Connected && ConnectionAttemptCount < MaxConnectionAttempts)
@@ -87,7 +118,7 @@ namespace Project_X_Synchronization_Server
                     Connect();
                     NextConnectAttempt = DateTime.Now.AddSeconds(SecondsBetweenConnectionAttempts);
                 }
-            } 
+            }
             if (Connected)
             {
                 // Send authentication packet
@@ -100,7 +131,6 @@ namespace Project_X_Synchronization_Server
             //Rejoin the thread
             ConnectionThread.Join();
         }
-
         public void Connect()
         {
             try
@@ -144,7 +174,7 @@ namespace Project_X_Synchronization_Server
                     if (Socket.Connected == false)
                     {
                         Connected = false;
-                        Disconnect();
+                        Close();
                         return;
                     }
                     else
@@ -186,7 +216,7 @@ namespace Project_X_Synchronization_Server
 
                     if (readBytes == 0)
                     {
-                        Disconnect();
+                        Close();
                         return;
                     }
 
@@ -198,44 +228,11 @@ namespace Project_X_Synchronization_Server
                         return;
                     Stream.BeginRead(asyncBuff, 0, Network.BufferSize * 2, OnReceive, null);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Log.log("An error occurred when receiving data. > " + e.Message, Log.LogType.ERROR);
             }
-        }
-        public void Disconnect()
-        {
-            // Connection
-            IP = "";
-            Port = 0;
-            ConnectedTime = default(DateTime);
-
-            // Network
-            Connected = false;
-            if (Socket != null)
-            {
-                Socket.Close();
-                Socket = null;
-            }
-            if (Stream != null)
-            {
-                Stream.Close();
-                Stream = null;
-            }
-            if (Reader != null)
-            {
-                Reader.Close();
-                Reader = null;
-            }
-            if (Writer != null)
-            {
-                Writer.Close();
-                Writer = null;
-            }
-            ConnectionAttemptCount = 0;
-            Authenticated = false;
-            Connected = false;
-            Log.log(Type.ToString() + " disconnected.", Log.LogType.CONNECTION);
         }
     }
 }

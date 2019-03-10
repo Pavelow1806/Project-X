@@ -13,6 +13,7 @@ namespace Project_X_Synchronization_Server
     class Network
     {
         public static Network instance;
+        private SynchronizationScheduler scheduler = new SynchronizationScheduler();
 
         public static bool Running = false;
 
@@ -20,7 +21,7 @@ namespace Project_X_Synchronization_Server
         public const int Port = 5602;
 
         private const int GameServerPort = 5601;
-        private const int LoginServerPort = 5500;        
+        private const int LoginServerPort = 5600;
 
         public const int BufferSize = 4096;
         #endregion
@@ -39,14 +40,17 @@ namespace Project_X_Synchronization_Server
         public bool LaunchServer()
         {
             AuthenticationCode = Database.instance.RequestAuthenticationCode();
+            int LineNumber = Log.log("Loading Authentication code..", Log.LogType.SYSTEM);
             if (AuthenticationCode == "")
             {
-                Log.log("Critical Error! Authentication code could not be loaded.", Log.LogType.ERROR);
+                Log.log(LineNumber, "Critical Error! Authentication code could not be loaded.", Log.LogType.ERROR);
             }
             else
             {
-                Log.log("Authentication code loaded.", Log.LogType.SUCCESS);
+                Log.log(LineNumber, "Authentication code loaded.", Log.LogType.SUCCESS);
             }
+            SynchronizationScheduler.instance.LoadSynchronizationSettings();
+            Data.Initialise();
             try
             {
                 Servers.Add(ConnectionType.LOGINSERVER, new Connection(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200"));
@@ -59,8 +63,10 @@ namespace Project_X_Synchronization_Server
                 Log.log("An error occurred when attempting to start the server. > " + e.Message, Log.LogType.ERROR);
                 return false;
             }
+            SynchronizationScheduler.instance.Start();
             Running = true;
             return true;
         }
     }
 }
+

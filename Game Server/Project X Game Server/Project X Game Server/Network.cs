@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Project_X_Login_Server
+namespace Project_X_Game_Server
 {
     class Network
     {
@@ -16,8 +18,11 @@ namespace Project_X_Login_Server
 
         #region TCP
         private const int MaxConnections = 100;
-        private const int Port = 5600;
+        public const int Port = 5601;
         private TcpListener Listener = new TcpListener(IPAddress.Any, Port);
+
+        private const int LoginServerPort = 5600;
+        private const int SyncServerPort = 5602;
 
         public const int BufferSize = 4096;
         #endregion
@@ -27,7 +32,6 @@ namespace Project_X_Login_Server
 
         public const double SecondsToAuthenticateBeforeDisconnect = 5.0;
         public string AuthenticationCode = "";
-        public bool GameServerAuthenticated = false;
         public bool SyncServerAuthenticated = false;
         private int ServerNumber = 0;
         public Client[] Clients = new Client[MaxConnections];
@@ -37,20 +41,23 @@ namespace Project_X_Login_Server
         {
             instance = this;
         }
-        
+
         public bool LaunchServer()
         {
             AuthenticationCode = Database.instance.RequestAuthenticationCode();
+            int LineNumber = Log.log("Loading Authentication code..", Log.LogType.SYSTEM);
             if (AuthenticationCode == "")
             {
-                Log.log("Critical Error! Authentication code could not be loaded.", Log.LogType.ERROR);
+                Log.log(LineNumber, "Critical Error! Authentication code could not be loaded.", Log.LogType.ERROR);
             }
             else
             {
-                Log.log("Authentication code loaded.", Log.LogType.SUCCESS);
+                Log.log(LineNumber, "Authentication code loaded.", Log.LogType.SUCCESS);
             }
             try
             {
+                Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200"));
+                Servers[ConnectionType.LOGINSERVER].Start();
                 for (int i = 0; i < MaxConnections; i++)
                 {
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
@@ -66,7 +73,6 @@ namespace Project_X_Login_Server
             Running = true;
             return true;
         }
-
         public void StartAccept()
         {
             Listener.BeginAcceptTcpClient(HandleAsyncConnection, Listener);
@@ -80,9 +86,9 @@ namespace Project_X_Login_Server
         {
             TcpClient socket = Listener.EndAcceptTcpClient(result);
             socket.NoDelay = false;
-            if (!GameServerAuthenticated || !SyncServerAuthenticated)
+            if (!SyncServerAuthenticated)
             {
-                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber));
+                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, "192.168.0.200"));
                 Servers[(ConnectionType)ServerNumber].Connected = true;
                 Servers[(ConnectionType)ServerNumber].Socket = socket;
                 Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();

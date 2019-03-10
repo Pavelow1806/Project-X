@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Project_X_Login_Server
+namespace Project_X_Game_Server
 {
     public enum ConnectionType
     {
@@ -133,7 +133,7 @@ namespace Project_X_Login_Server
                     Buffer.BlockCopy(ReadBuff, 0, Bytes, 0, ReadBytes);
 
                     // Process the packet
-                    ProcessData.processData(Index, Bytes);
+                    ProcessData.processData(Bytes);
 
                     Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, OnReceiveData, null);
                 }
@@ -141,9 +141,6 @@ namespace Project_X_Login_Server
                 {
                     // Output error message
                     Log.log("An error occured while receiving data. Closing connection to " + Type.ToString() + ((Type == ConnectionType.CLIENT) ? " Index " + Index.ToString() : "."), Log.LogType.ERROR);
-
-                    // Send DB updates
-                    Database.instance.LogActivity(Username, Activity.DISCONNECT, SessionID);
 
                     // Close the connection
                     Close();

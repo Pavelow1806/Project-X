@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Project_X_Synchronization_Server
+namespace Project_X_Game_Server
 {
     class Log
     {

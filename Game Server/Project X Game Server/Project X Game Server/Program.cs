@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Project_X_Synchronization_Server
+namespace Project_X_Game_Server
 {
     class Program
     {
@@ -14,11 +14,10 @@ namespace Project_X_Synchronization_Server
 
         private static Database db = new Database();
         private static Network nw = new Network();
-        private static Data cache = new Data();
 
         static void Main(string[] args)
         {
-            Console.Title = "Project X - Synchronization Server";
+            Console.Title = "Project X - Game Server";
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Black;
             Console.WindowWidth = 200;
@@ -28,7 +27,7 @@ namespace Project_X_Synchronization_Server
             Log.log("", Log.LogType.START);
             Log.log("", Log.LogType.START);
             Log.log("                            Project X |", Log.LogType.START);
-            Log.log("               Synchronization Server |", Log.LogType.START);
+            Log.log("                          Game Server |", Log.LogType.START);
             Log.log("                                 v1.0 |", Log.LogType.START);
             Log.log("", Log.LogType.START);
             Log.log("                         Starting server..", Log.LogType.START);
@@ -89,14 +88,6 @@ namespace Project_X_Synchronization_Server
                     {
                         Log.log("Server already running.", Log.LogType.WARNING);
                     }
-                }
-                else if (line.ToLower() == "initialise")
-                {
-                    Data.Initialise();
-                }
-                else if (line.ToLower() == "sync")
-                {
-                    SynchronizationScheduler.instance.SynchronizeNow();
                 }
                 else
                 {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace Project_X_Synchronization_Server
+namespace Project_X_Game_Server
 {
     public enum ClientSendPacketNumbers
     {
@@ -61,16 +61,16 @@ namespace Project_X_Synchronization_Server
             buffer.WriteInteger(packetNumber);
         }
         #region Generic
-        public static void Authenticate(Connection connection)
+        public static void Authenticate(Server server)
         {
-            if (!connection.Authenticated)
+            if (!server.Authenticated)
             {
                 try
                 {
                     BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer);
                     buffer.WriteString(Network.instance.AuthenticationCode);
                     data = buffer.ToArray();
-                    sendData(ConnectionType.LOGINSERVER, connection.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
+                    sendData(server.Type, server.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
                 }
                 catch (Exception e)
                 {
@@ -80,7 +80,7 @@ namespace Project_X_Synchronization_Server
             }
             else
             {
-                Log.log("An attempt was made to send an authentication packet, the " + connection.Type.ToString() + " is already authenticated.", Log.LogType.ERROR);
+                Log.log("An attempt was made to send an authentication packet, the " + server.Type.ToString() + " is already authenticated.", Log.LogType.ERROR);
             }
         }
         #endregion
@@ -90,7 +90,7 @@ namespace Project_X_Synchronization_Server
         #endregion
 
         #region Game Server
-        
+
         #endregion
     }
 }
