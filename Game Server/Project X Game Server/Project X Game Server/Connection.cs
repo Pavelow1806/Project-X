@@ -19,7 +19,7 @@ namespace Project_X_Game_Server
     {
         public ConnectionType Type;
 
-        private Thread ConnectionThread;
+        protected Thread ConnectionThread;
 
         #region Locking
         private static readonly object lockObj = new object();
@@ -28,31 +28,57 @@ namespace Project_X_Game_Server
         #region Connection
         public int Index = -1;
         public string IP = "";
+        public int Port = 0;
         public string Username = "";
         public string SessionID = "";
         public bool Connected = false;
         public DateTime ConnectedTime = default(DateTime);
+        public CommunicationType Communication;
         #endregion
 
         #region Network
-        private byte[] ReadBuff;
+        protected byte[] ReadBuff;
         public TcpClient Socket;
         public NetworkStream Stream;
         #endregion
 
-        public Connection(ConnectionType type, int id)
+        int LineNumber = -1;
+        #region Authentication
+        public bool Authenticated = false;
+        #endregion
+        public bool ShouldHandleData = false;
+        public int ConnectionAttemptCount = 0;
+        private int SecondsBetweenConnectionAttempts = 5;
+        private const int MaxConnectionAttempts = 5;
+        public DateTime NextConnectAttempt = default(DateTime);
+
+
+        public Connection(ConnectionType type, int id, CommunicationType communication)
         {
             Type = type;
             Index = id;
+            Communication = communication;
         }
 
+        #region Generic Connectivity Functions
         public virtual void Start()
         {
             ConnectedTime = DateTime.Now;
-            ConnectionThread = new Thread(new ThreadStart(BeginThread));
+            switch (Communication)
+            {
+                case CommunicationType.Listen:
+                    // Start new listener thread
+                    ConnectionThread = new Thread(new ThreadStart(BeginThread));
+                    break;
+                case CommunicationType.Send:
+                    // Start new thread for 
+                    ConnectionThread = new Thread(new ThreadStart(AttemptConnect));
+                    break;
+                default:
+                    break;
+            }
             ConnectionThread.Start();
         }
-
         public virtual void Close()
         {
             // Connection
@@ -79,6 +105,7 @@ namespace Project_X_Game_Server
             // Rejoin main thread
             ConnectionThread.Join();
         }
+        #endregion
 
         public void BeginThread()
         {
@@ -146,6 +173,106 @@ namespace Project_X_Game_Server
                     Close();
 
                     return;
+                }
+            }
+        }
+        public void AttemptConnect()
+        {
+            while (!Connected && ConnectionAttemptCount < MaxConnectionAttempts)
+            {
+                if (DateTime.Now >= NextConnectAttempt)
+                {
+                    ++ConnectionAttemptCount;
+                    if (LineNumber == -1)
+                    {
+                        LineNumber = Log.log("Attempt #" + ConnectionAttemptCount.ToString() + ", connecting to " + Type.ToString() + "..", Log.LogType.SYSTEM);
+                    }
+                    else
+                    {
+                        Log.log(LineNumber, "Attempt #" + ConnectionAttemptCount.ToString() + ", connecting to " + Type.ToString() + "..", Log.LogType.SYSTEM);
+                    }
+                    Connect();
+                    NextConnectAttempt = DateTime.Now.AddSeconds(SecondsBetweenConnectionAttempts);
+                }
+            }
+            if (Connected)
+            {
+                // Send authentication packet
+                SendData.Authenticate((Server)this);
+            }
+            else
+            {
+                Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
+            }
+            //Rejoin the thread
+            ConnectionThread.Join();
+        }
+        public void Connect()
+        {
+            try
+            {
+                if (Socket != null)
+                {
+                    if (Socket.Connected || Connected)
+                    {
+                        Log.log(Type.ToString() + " is already connected.", Log.LogType.CONNECTION);
+                        return;
+                    }
+                    Socket.Close();
+                    Socket = null;
+                }
+                Socket = new TcpClient();
+                Socket.ReceiveBufferSize = Network.BufferSize;
+                Socket.SendBufferSize = Network.BufferSize;
+                Socket.NoDelay = false;
+                Array.Resize(ref ReadBuff, Network.BufferSize * 2);
+                Socket.BeginConnect(IP, Port, new AsyncCallback(ConnectCallback), Socket);
+            }
+            catch (Exception e)
+            {
+                if (ConnectionAttemptCount >= 5)
+                {
+                    Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
+                }
+                else
+                {
+                    Log.log(LineNumber, "Connection to " + Type.ToString() + ": Attempt " + ConnectionAttemptCount.ToString() + " / " + MaxConnectionAttempts.ToString() + " failed. Trying again in " + SecondsBetweenConnectionAttempts.ToString() + " seconds.", Log.LogType.SYSTEM);
+                }
+            }
+        }
+        void ConnectCallback(IAsyncResult result)
+        {
+            try
+            {
+                if (Socket != null)
+                {
+                    Socket.EndConnect(result);
+                    if (Socket.Connected == false)
+                    {
+                        Connected = false;
+                        Close();
+                        return;
+                    }
+                    else
+                    {
+                        Socket.NoDelay = true;
+                        Stream = Socket.GetStream();
+                        Stream.BeginRead(ReadBuff, 0, Network.BufferSize * 2, OnReceiveData, null);
+                        ConnectedTime = DateTime.Now;
+                        Log.log("Connection to " + Type.ToString() + ", Successful.", Log.LogType.CONNECTION);
+                        Connected = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (ConnectionAttemptCount >= 5)
+                {
+                    Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
+                }
+                else
+                {
+                    Log.log(LineNumber, "Connection to " + Type.ToString() + ": Attempt " + ConnectionAttemptCount.ToString() + " / " + MaxConnectionAttempts.ToString() + " failed. Trying again in " + SecondsBetweenConnectionAttempts.ToString() + " seconds.", Log.LogType.SYSTEM);
                 }
             }
         }

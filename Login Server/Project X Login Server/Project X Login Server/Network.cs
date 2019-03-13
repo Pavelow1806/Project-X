@@ -29,7 +29,7 @@ namespace Project_X_Login_Server
         public string AuthenticationCode = "";
         public bool GameServerAuthenticated = false;
         public bool SyncServerAuthenticated = false;
-        private int ServerNumber = 0;
+        private int ServerNumber = 10;
         public Client[] Clients = new Client[MaxConnections];
         #endregion
 

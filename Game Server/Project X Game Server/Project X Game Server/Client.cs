@@ -13,7 +13,7 @@ namespace Project_X_Game_Server
         public DateTime LoggedInTime = default(DateTime);
 
         public Client(ConnectionType type, int id) :
-            base(type, id)
+            base(type, id, CommunicationType.Listen)
         {
 
         }

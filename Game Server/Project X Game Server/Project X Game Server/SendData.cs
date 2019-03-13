@@ -26,7 +26,7 @@ namespace Project_X_Game_Server
     }
     class SendData : Data
     {
-        private static void sendData(ConnectionType destination, ConnectionType type, string PacketName)
+        private static void sendData(ConnectionType destination, string PacketName)
         {
             try
             {
@@ -34,10 +34,10 @@ namespace Project_X_Game_Server
                 switch (destination)
                 {
                     case ConnectionType.GAMESERVER:
-                        Network.instance.Servers[type].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
                         break;
                     case ConnectionType.LOGINSERVER:
-                        Network.instance.Servers[type].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
                         break;
                     default:
                         break;
@@ -57,7 +57,7 @@ namespace Project_X_Game_Server
 
         private static void BuildBasePacket(int packetNumber)
         {
-            buffer.WriteByte((byte)ConnectionType.SYNCSERVER);
+            buffer.WriteByte((byte)ConnectionType.GAMESERVER);
             buffer.WriteInteger(packetNumber);
         }
         #region Generic
@@ -70,7 +70,7 @@ namespace Project_X_Game_Server
                     BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer);
                     buffer.WriteString(Network.instance.AuthenticationCode);
                     data = buffer.ToArray();
-                    sendData(server.Type, server.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
+                    sendData(server.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
                 }
                 catch (Exception e)
                 {

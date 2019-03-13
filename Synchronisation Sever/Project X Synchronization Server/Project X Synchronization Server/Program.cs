@@ -21,7 +21,6 @@ namespace Project_X_Synchronization_Server
             Console.Title = "Project X - Synchronization Server";
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Black;
-            Console.WindowWidth = 200;
             Console.Clear();
 
             Log.log("", Log.LogType.START);

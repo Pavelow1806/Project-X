@@ -10,6 +10,11 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
+    public enum CommunicationType
+    {
+        Listen,
+        Send
+    }
     class Network
     {
         public static Network instance;
@@ -56,7 +61,7 @@ namespace Project_X_Game_Server
             }
             try
             {
-                Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200"));
+                Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200", CommunicationType.Send));
                 Servers[ConnectionType.LOGINSERVER].Start();
                 for (int i = 0; i < MaxConnections; i++)
                 {
@@ -88,8 +93,9 @@ namespace Project_X_Game_Server
             socket.NoDelay = false;
             if (!SyncServerAuthenticated)
             {
-                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, "192.168.0.200"));
+                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, "192.168.0.200", CommunicationType.Listen));
                 Servers[(ConnectionType)ServerNumber].Connected = true;
+                Servers[(ConnectionType)ServerNumber].Authenticated = false;
                 Servers[(ConnectionType)ServerNumber].Socket = socket;
                 Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();
                 Servers[(ConnectionType)ServerNumber].Username = "System";
