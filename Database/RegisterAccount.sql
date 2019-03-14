@@ -23,7 +23,7 @@ BEGIN
             password,
             0;
 		CALL LogAccountActivity(username, 4, "System", 1);
-        SELECT "The account was setup successfully." AS Result;
+        SELECT "The account was setup successfully." AS Result, (SELECT Account_ID FROM tbl_Accounts WHERE Username = username AND Email = email) AS Account_ID;
 	END IF;		
 END //
 DELIMITER ;

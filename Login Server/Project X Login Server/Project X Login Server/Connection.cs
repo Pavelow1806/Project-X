@@ -123,14 +123,14 @@ namespace Project_X_Login_Server
                     {
                         return;
                     }
+                    byte[] Bytes = null;
+                    Array.Resize(ref Bytes, ReadBytes);
+                    Buffer.BlockCopy(ReadBuff, 0, Bytes, 0, ReadBytes);
                     if (ReadBytes <= 0)
                     {
                         Close();
                         return;
                     }
-                    byte[] Bytes = null;
-                    Array.Resize(ref Bytes, ReadBytes);
-                    Buffer.BlockCopy(ReadBuff, 0, Bytes, 0, ReadBytes);
 
                     // Process the packet
                     ProcessData.processData(Index, Bytes);

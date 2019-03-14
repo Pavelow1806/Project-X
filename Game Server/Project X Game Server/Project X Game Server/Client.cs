@@ -13,7 +13,7 @@ namespace Project_X_Game_Server
         public DateTime LoggedInTime = default(DateTime);
 
         public Client(ConnectionType type, int id) :
-            base(type, id, CommunicationType.Listen)
+            base(type, id, CommunicationType.Receive)
         {
 
         }
@@ -24,13 +24,13 @@ namespace Project_X_Game_Server
             SessionID = Index.ToString("000") + " - " + IP + " - " + ConnectedTime.ToString("yyyy/MM/dd hh:mm:ss");
         }
 
-        public override void Close()
+        public override void Disconnect()
         {
             Username = "";
             Email = "";
             LoggedIn = false;
             LoggedInTime = default(DateTime);
-            base.Close();
+            base.Disconnect();
         }
     }
 }

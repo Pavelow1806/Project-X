@@ -17,7 +17,8 @@ namespace Project_X_Game_Server
     public enum LoginServerProcessPacketNumbers
     {
         Invalid,
-        AuthenticateServer
+        AuthenticateServer,
+        WhiteList
     }
     public enum GameServerProcessPacketNumbers
     {
@@ -33,7 +34,7 @@ namespace Project_X_Game_Server
     {
         public static void processData(byte[] Data)
         {
-            buffer.WriteBytes(data);
+            buffer.WriteBytes(Data);
 
             ConnectionType Source = (ConnectionType)buffer.ReadByte();
             int PacketNumber = buffer.ReadInteger();
@@ -79,9 +80,23 @@ namespace Project_X_Game_Server
             }
         }
         #endregion
-
-        #region Game Server Communication
-
+        
+        #region Login Server Communication
+        private static void WhiteList()
+        {
+            string ip = buffer.ReadString();
+            int LineNumber = Log.log("Checking white list for IP: " + ip + "..", Log.LogType.RECEIVED);
+            if (!Network.instance.CheckWhiteList(ip))
+            {
+                Network.instance.WhiteList.Add(ip);
+                Log.log(LineNumber, "Client IP: " + ip + " added successfully, sending confirmation to login server.", Log.LogType.RECEIVED);
+                SendData.ConfirmWhiteList(ip);
+            }
+            else
+            {
+                Log.log(LineNumber, "Client IP: " + ip + " was already white listed.", Log.LogType.WARNING);
+            }
+        }
         #endregion
 
         #region Synchronization Server Communication

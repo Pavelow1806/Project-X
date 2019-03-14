@@ -17,7 +17,8 @@ namespace Project_X_Login_Server
     public enum GameServerProcessPacketNumbers
     {
         Invalid,
-        AuthenticateServer
+        AuthenticateServer,
+        ConfirmWhiteList
     }
     public enum SyncServerProcessPacketNumbers
     {
@@ -69,9 +70,7 @@ namespace Project_X_Login_Server
                             obj = new object[1];
                             obj[0] = Source;
 
-                            typeof(ProcessData).InvokeMember(((SyncServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
-                            break;
-                        case ConnectionType.LOGINSERVER:
+                            typeof(ProcessData).InvokeMember(((ClientProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
                             break;
                         case ConnectionType.SYNCSERVER:
                             if (PacketNumber == 0 || !Enum.IsDefined(typeof(SyncServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[(ConnectionType)Index].Socket == null)
@@ -97,8 +96,9 @@ namespace Project_X_Login_Server
                 Reset();
             }
         }
+
         #region Client Communication
-        private static void LoginRequest()
+        private static void LoginRequest(ConnectionType type)
         {
             string username = buffer.ReadString();
             string password = buffer.ReadString();
@@ -106,55 +106,71 @@ namespace Project_X_Login_Server
             switch (r)
             {
                 case Response.SUCCESSFUL:
+                    SendData.LoginResponse(Index, 1);
+                    SendData.WhiteListConfirmation(Network.instance.Clients[Index].IP);
                     break;
                 case Response.UNSUCCESSFUL:
+                    SendData.LoginResponse(Index, 0);
                     break;
                 case Response.ERROR:
+                    SendData.LoginResponse(Index, 2);
                     break;
                 default:
                     break;
             }
         }
-        private static void RegistrationRequest()
+        private static void RegistrationRequest(ConnectionType type)
         {
+            int LineNumber = Log.log("Registration request received from index: " + Index + ", checking database.", Log.LogType.RECEIVED);
             string username = buffer.ReadString();
             string password = buffer.ReadString();
             string email = buffer.ReadString();
             string response = "";
-            Response r = Database.instance.RequestRegistration(username, password, email, out response);
+            int account_id = -1;
+            Response r = Database.instance.RequestRegistration(username, password, email, out response, out account_id);
             switch (r)
             {
                 case Response.SUCCESSFUL:
-                    if (response == "The account was setup successfully.")
+                    if (response == "The account was setup successfully." && account_id > -1)
                     {
                         // Return confirmation
+                        Log.log(LineNumber, "Registration of account was successful, account with ID: " + account_id + " and Username: " + username + " created, sending response.", Log.LogType.RECEIVED);
+                        SendData.RegistrationResponse(Index, 1, response);
+                        SendData.RegistrationNotification(account_id, username, password, email);
                     }
                     else
                     {
                         // Registration unsuccessful (return message from DB)
+                        Log.log(LineNumber, "Registration of account was unsuccessful, account with Username: " + username + " not created, sending response.", Log.LogType.RECEIVED);
+                        SendData.RegistrationResponse(Index, 0, response);
                     }
                     break;
                 case Response.UNSUCCESSFUL:
+                    Log.log(LineNumber, "Registration of account was unsuccessful, account with Username: " + username + " not created, sending response.", Log.LogType.RECEIVED);
+                    SendData.RegistrationResponse(Index, 0, response);
                     // Unsuccessful
                     break;
                 case Response.ERROR:
+                    Log.log(LineNumber, "Registration of account was unsuccessful, account with Username: " + username + " not created, sending response, please fix errors.", Log.LogType.ERROR);
+                    SendData.RegistrationResponse(Index, 0, response);
                     // Unsuccessful
-                    break;
-                default:
                     break;
             }
         }
-        private static void CharacterListRequest()
+        private static void CharacterListRequest(ConnectionType type)
         {
             string username = buffer.ReadString();
             Response r = Database.instance.GetCharacters(username, Index);
             switch (r)
             {
                 case Response.SUCCESSFUL:
+                    SendData.CharacterList(Index, true);
                     break;
                 case Response.UNSUCCESSFUL:
+                    SendData.CharacterList(Index, false);
                     break;
                 case Response.ERROR:
+                    SendData.CharacterList(Index, false);
                     break;
                 default:
                     break;
@@ -167,7 +183,15 @@ namespace Project_X_Login_Server
         {
             if (buffer.ReadString() == Network.instance.AuthenticationCode)
             {
-                Network.instance.SyncServerAuthenticated = true;
+                if (type == ConnectionType.SYNCSERVER)
+                {
+                    Network.instance.SyncServerAuthenticated = true;
+                }
+                else if (type == ConnectionType.GAMESERVER)
+                {
+                    Network.instance.GameServerAuthenticated = true;
+                }
+                Network.instance.Servers[(ConnectionType)Index].Type = type;
                 Network.instance.Servers[(ConnectionType)Index].Authenticated = true;
                 Network.instance.Servers.Add(type, Network.instance.Servers[(ConnectionType)Index]);
                 Network.instance.Servers.Remove((ConnectionType)Index);
@@ -179,7 +203,12 @@ namespace Project_X_Login_Server
         #endregion
 
         #region Game Server Communication
-
+        private static void ConfirmWhiteList(ConnectionType type)
+        {
+            string ip = buffer.ReadString();
+            Log.log("White list of client with IP: " + ip + " confirmed. Notifying client.", Log.LogType.RECEIVED);
+            SendData.ConfirmWhiteList(Network.instance.GetClient(ip));
+        }
         #endregion
 
         #region Synchronization Server Communication

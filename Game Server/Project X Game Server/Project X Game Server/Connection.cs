@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -34,6 +35,8 @@ namespace Project_X_Game_Server
         public bool Connected = false;
         public DateTime ConnectedTime = default(DateTime);
         public CommunicationType Communication;
+        public StreamReader Reader = null;
+        public StreamWriter Writer = null;
         #endregion
 
         #region Network
@@ -66,12 +69,12 @@ namespace Project_X_Game_Server
             ConnectedTime = DateTime.Now;
             switch (Communication)
             {
-                case CommunicationType.Listen:
-                    // Start new listener thread
-                    ConnectionThread = new Thread(new ThreadStart(BeginThread));
+                case CommunicationType.Receive:
+                    // Start new listener thread for received connections from other servers
+                    ConnectionThread = new Thread(new ThreadStart(BeginReceive));
                     break;
                 case CommunicationType.Send:
-                    // Start new thread for 
+                    // Start new thread for opening the connection from this server
                     ConnectionThread = new Thread(new ThreadStart(AttemptConnect));
                     break;
                 default:
@@ -79,7 +82,7 @@ namespace Project_X_Game_Server
             }
             ConnectionThread.Start();
         }
-        public virtual void Close()
+        public virtual void Disconnect()
         {
             // Connection
             IP = "";
@@ -98,7 +101,17 @@ namespace Project_X_Game_Server
                 Socket.Close();
                 Socket = null;
             }
-            if (Type == ConnectionType.GAMESERVER || Type == ConnectionType.SYNCSERVER)
+            if (Reader != null)
+            {
+                Reader.Close();
+                Reader = null;
+            }
+            if (Writer != null)
+            {
+                Writer.Close();
+                Writer = null;
+            }
+            if (Network.instance.Servers.ContainsKey(Type))
             {
                 Network.instance.Servers.Remove(Type);
             }
@@ -107,75 +120,7 @@ namespace Project_X_Game_Server
         }
         #endregion
 
-        public void BeginThread()
-        {
-            Socket.SendBufferSize = Network.BufferSize;
-            Socket.ReceiveBufferSize = Network.BufferSize;
-            Stream = Socket.GetStream();
-            Array.Resize(ref ReadBuff, Socket.ReceiveBufferSize);
-            StartAccept();
-        }
-
-        private void StartAccept()
-        {
-            try
-            {
-                if (Stream != null)
-                {
-                    if (Connected)
-                    {
-                        Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, HandleAsyncConnection, null);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                //Log.log("An error occurred when beginning the streams read. > " + e.Message, Log.LogType.ERROR);
-            }
-        }
-        private void HandleAsyncConnection(IAsyncResult result)
-        {
-            StartAccept();
-            OnReceiveData(result);
-        }
-
-        public void OnReceiveData(IAsyncResult result)
-        {
-            lock (lockObj)
-            {
-                try
-                {
-                    int ReadBytes = Stream.EndRead(result);
-                    if (Socket == null)
-                    {
-                        return;
-                    }
-                    if (ReadBytes <= 0)
-                    {
-                        Close();
-                        return;
-                    }
-                    byte[] Bytes = null;
-                    Array.Resize(ref Bytes, ReadBytes);
-                    Buffer.BlockCopy(ReadBuff, 0, Bytes, 0, ReadBytes);
-
-                    // Process the packet
-                    ProcessData.processData(Bytes);
-
-                    Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, OnReceiveData, null);
-                }
-                catch (Exception e)
-                {
-                    // Output error message
-                    Log.log("An error occured while receiving data. Closing connection to " + Type.ToString() + ((Type == ConnectionType.CLIENT) ? " Index " + Index.ToString() : "."), Log.LogType.ERROR);
-
-                    // Close the connection
-                    Close();
-
-                    return;
-                }
-            }
-        }
+        #region Send (Connect to another server)
         public void AttemptConnect()
         {
             while (!Connected && ConnectionAttemptCount < MaxConnectionAttempts)
@@ -198,7 +143,7 @@ namespace Project_X_Game_Server
             if (Connected)
             {
                 // Send authentication packet
-                SendData.Authenticate((Server)this);
+                SendData.Authenticate(this);
             }
             else
             {
@@ -250,14 +195,14 @@ namespace Project_X_Game_Server
                     if (Socket.Connected == false)
                     {
                         Connected = false;
-                        Close();
+                        Disconnect();
                         return;
                     }
                     else
                     {
                         Socket.NoDelay = true;
                         Stream = Socket.GetStream();
-                        Stream.BeginRead(ReadBuff, 0, Network.BufferSize * 2, OnReceiveData, null);
+                        Stream.BeginRead(ReadBuff, 0, Network.BufferSize * 2, OnReceive, null);
                         ConnectedTime = DateTime.Now;
                         Log.log("Connection to " + Type.ToString() + ", Successful.", Log.LogType.CONNECTION);
                         Connected = true;
@@ -276,5 +221,77 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        #endregion
+
+        #region Receive (Received connection from another server/client)
+        public void BeginReceive()
+        {
+            Socket.SendBufferSize = Network.BufferSize;
+            Socket.ReceiveBufferSize = Network.BufferSize;
+            Stream = Socket.GetStream();
+            Array.Resize(ref ReadBuff, Socket.ReceiveBufferSize);
+            StartAccept();
+        }
+        private void StartAccept()
+        {
+            try
+            {
+                if (Stream != null)
+                {
+                    if (Connected)
+                    {
+                        Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, HandleAsyncConnection, null);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                //Log.log("An error occurred when beginning the streams read. > " + e.Message, Log.LogType.ERROR);
+            }
+        }
+        private void HandleAsyncConnection(IAsyncResult result)
+        {
+            StartAccept();
+            OnReceive(result);
+        }
+        #endregion
+
+        #region General Functions
+        void OnReceive(IAsyncResult result)
+        {
+            lock (lockObj)
+            {
+                try
+                {
+                    if (Socket != null)
+                    {
+                        if (Socket == null)
+                            return;
+
+                        int readBytes = Stream.EndRead(result);
+                        byte[] newBytes = null;
+                        Array.Resize(ref newBytes, readBytes);
+                        Buffer.BlockCopy(ReadBuff, 0, newBytes, 0, readBytes);
+
+                        if (readBytes <= 0)
+                        {
+                            Disconnect();
+                            return;
+                        }
+
+                        ProcessData.processData(newBytes);
+
+                        if (Socket == null)
+                            return;
+                        Stream.BeginRead(ReadBuff, 0, Socket.ReceiveBufferSize, OnReceive, null);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.log("An error occurred when receiving data. > " + e.Message, Log.LogType.ERROR);
+                }
+            }
+        }
+        #endregion
     }
 }

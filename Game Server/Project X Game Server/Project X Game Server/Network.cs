@@ -12,7 +12,7 @@ namespace Project_X_Game_Server
 {
     public enum CommunicationType
     {
-        Listen,
+        Receive,
         Send
     }
     class Network
@@ -40,6 +40,8 @@ namespace Project_X_Game_Server
         public bool SyncServerAuthenticated = false;
         private int ServerNumber = 0;
         public Client[] Clients = new Client[MaxConnections];
+
+        public List<string> WhiteList = new List<string>();
         #endregion
 
         public Network()
@@ -93,32 +95,41 @@ namespace Project_X_Game_Server
             socket.NoDelay = false;
             if (!SyncServerAuthenticated)
             {
-                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, "192.168.0.200", CommunicationType.Listen));
+                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, socket.Client.RemoteEndPoint.ToString(), CommunicationType.Receive));
                 Servers[(ConnectionType)ServerNumber].Connected = true;
                 Servers[(ConnectionType)ServerNumber].Authenticated = false;
                 Servers[(ConnectionType)ServerNumber].Socket = socket;
-                Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();
                 Servers[(ConnectionType)ServerNumber].Username = "System";
                 Servers[(ConnectionType)ServerNumber].SessionID = "System";
                 Servers[(ConnectionType)ServerNumber].Start();
-                Console.WriteLine("Contact from potential server made: ");
-                Console.WriteLine("IP: " + Servers[(ConnectionType)ServerNumber].IP);
-                Console.WriteLine("Waiting for authentication packet..");
+                Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
+                Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
                 ++ServerNumber;
             }
             else
             {
-                for (int i = 0; i < MaxConnections; i++)
+                if (CheckWhiteList(socket.Client.RemoteEndPoint.ToString()))
                 {
-                    if (Clients[i].Socket == null)
+                    Log.log("Client found in white-list, proceeding with accepting incoming connection..", Log.LogType.SUCCESS);
+                    for (int i = 0; i < MaxConnections; i++)
                     {
-                        Clients[i].Connected = true;
-                        Clients[i].Socket = socket;
-                        Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
-                        Clients[i].Start();
-                        Console.WriteLine("A client has connected to the server:");
-                        Console.WriteLine("IP: " + Clients[i].IP);
+                        if (Clients[i].Socket == null)
+                        {
+                            Clients[i].Connected = true;
+                            Clients[i].Socket = socket;
+                            Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
+                            Clients[i].Start();
+                            Log.log("The white listed client has successfully connected to the server:", Log.LogType.CONNECTION);
+                            Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
+                            break;
+                        }
                     }
+                }
+                else
+                {
+                    Log.log("Client not found in white-list, denying connection.", Log.LogType.WARNING);
+                    socket.Close();
                 }
             }
         }
@@ -131,6 +142,17 @@ namespace Project_X_Game_Server
                     Servers.Remove(server.Key);
                 }
             }
+        }
+        public bool CheckWhiteList(string ip)
+        {
+            for (int i = 0; i < WhiteList.Count; i++)
+            {
+                if (ip == WhiteList[i])
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

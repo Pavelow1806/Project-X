@@ -20,7 +20,6 @@ namespace Project_X_Game_Server
             Console.Title = "Project X - Game Server";
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Black;
-            Console.WindowWidth = 200;
             Console.Clear();
 
             Log.log("", Log.LogType.START);

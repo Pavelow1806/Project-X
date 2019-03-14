@@ -8,17 +8,24 @@ namespace Project_X_Login_Server
 {
     class Data
     {
+        protected static Data instance;
+
         protected static ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
 
         public static byte[] data = null;
 
-        protected static int Index = -1;
+        public static int Index = -1;
 
-        public static void Reset()
+        public Data()
+        {
+            instance = this;
+        }
+
+        public static void Reset(bool DontResetIndex = false)
         {
             buffer = new ByteBuffer.ByteBuffer();
             data = null;
-            Index = -1;
+            if (!DontResetIndex) Index = -1;
         }
     }
 }

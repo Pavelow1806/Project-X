@@ -113,7 +113,7 @@ namespace Project_X_Login_Server
             }
         }
 
-        public Response RequestRegistration(string username, string password, string email, out string response)
+        public Response RequestRegistration(string username, string password, string email, out string response, out int Account_ID)
         {
             reader = QueryDatabase("CALL RegisterAccount('" + username + "', '" + password + "', '" + email + "');");
             if (reader != null)
@@ -121,6 +121,7 @@ namespace Project_X_Login_Server
                 if (reader.Read())
                 {
                     response = reader["Result"].ToString();
+                    Account_ID = reader.GetInt32("Account_ID");
                     reader.Close();
                     reader = null;
                     return Response.SUCCESSFUL;
@@ -128,6 +129,7 @@ namespace Project_X_Login_Server
                 else
                 {
                     response = "An error occured when attempting to register.";
+                    Account_ID = -1;
                     reader.Close();
                     reader = null;
                     return Response.UNSUCCESSFUL;
@@ -136,6 +138,7 @@ namespace Project_X_Login_Server
             else
             {
                 response = "An error occured when attempting to register.";
+                Account_ID = -1;
                 return Response.ERROR;
             }
         }
@@ -154,8 +157,8 @@ namespace Project_X_Login_Server
                         (
                             new Character
                             (
-                                reader["Character_Name"].ToString(), 
-                                Convert.ToInt32(reader["Character_Level"])
+                                reader.GetString("Character_Name"),
+                                reader.GetInt32("Character_Level")
                             )
                         );
                     }

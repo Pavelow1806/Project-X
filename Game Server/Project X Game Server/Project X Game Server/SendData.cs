@@ -22,7 +22,8 @@ namespace Project_X_Game_Server
     public enum LoginServerSendPacketNumbers
     {
         Invalid,
-        AuthenticateGameServer
+        AuthenticateGameServer,
+        ConfirmWhiteList
     }
     class SendData : Data
     {
@@ -61,7 +62,7 @@ namespace Project_X_Game_Server
             buffer.WriteInteger(packetNumber);
         }
         #region Generic
-        public static void Authenticate(Server server)
+        public static void Authenticate(Connection server)
         {
             if (!server.Authenticated)
             {
@@ -86,7 +87,22 @@ namespace Project_X_Game_Server
         #endregion
 
         #region Login Server
-
+        public static void ConfirmWhiteList(string ip)
+        {
+            try
+            {
+                BuildBasePacket((int)LoginServerSendPacketNumbers.ConfirmWhiteList);
+                buffer.WriteString(ip);
+                data = buffer.ToArray();
+                sendData(ConnectionType.LOGINSERVER, LoginServerSendPacketNumbers.ConfirmWhiteList.ToString());
+                Log.log("Sent white list confirmation of IP: " + ip, Log.LogType.SENT);
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Authentication packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
         #endregion
 
         #region Game Server
