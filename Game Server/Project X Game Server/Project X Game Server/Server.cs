@@ -13,6 +13,7 @@ namespace Project_X_Game_Server
     {
         private DateTime TimeUntilRelease = default(DateTime);
         private Thread AuthenticationThread;
+        private Thread WorldThread;
 
         public Server(ConnectionType type, int id, int port, string ip, CommunicationType communication) :
             base(type, id, communication)
@@ -51,7 +52,9 @@ namespace Project_X_Game_Server
                 {
                     msg = "ready for client connections.";
                 }
-                Log.log("Authentication of " + Type.ToString() + " successful, " + msg, Log.LogType.SUCCESS);
+                Log.log("Authentication of " + Type.ToString() + " successful, starting world data stream.. " + msg, Log.LogType.SUCCESS);
+                WorldThread = new Thread(new ThreadStart(WorldStream));
+                WorldThread.Start();
             }
             else
             {
@@ -59,6 +62,15 @@ namespace Project_X_Game_Server
                 Disconnect();
             }
             AuthenticationThread.Join();
+        }
+        public void WorldStream()
+        {
+            Log.log("Starting world update thread..", Log.LogType.CACHE);
+            while (Connected)
+            {
+                
+            }
+            WorldThread.Join();
         }
     }
 }

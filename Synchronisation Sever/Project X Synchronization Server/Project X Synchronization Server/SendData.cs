@@ -24,20 +24,25 @@ namespace Project_X_Synchronization_Server
         Invalid,
         AuthenticateGameServer
     }
+    public enum GameServerSendPacketNumbers
+    {
+        Invalid,
+        AuthenticateGameServer,
+        WorldRequest
+    }
     class SendData : Data
     {
-        private static void sendData(ConnectionType destination, ConnectionType type, string PacketName)
+        private static void sendData(ConnectionType destination, string PacketName)
         {
             try
             {
-                buffer.WriteBytes(data);
                 switch (destination)
                 {
                     case ConnectionType.GAMESERVER:
-                        Network.instance.Servers[type].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.LOGINSERVER:
-                        Network.instance.Servers[type].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     default:
                         break;
@@ -52,12 +57,12 @@ namespace Project_X_Synchronization_Server
                 Log.log("     Error Message > " + e.Message, Log.LogType.ERROR);
             }
 
-            Reset();
         }
 
         private static void BuildBasePacket(int packetNumber)
         {
-            buffer.WriteByte((byte)ConnectionType.SYNCSERVER);
+            Reset();
+            buffer.WriteInteger((int)ConnectionType.SYNCSERVER);
             buffer.WriteInteger(packetNumber);
         }
         #region Generic
@@ -70,7 +75,7 @@ namespace Project_X_Synchronization_Server
                     BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer);
                     buffer.WriteString(Network.instance.AuthenticationCode);
                     data = buffer.ToArray();
-                    sendData(ConnectionType.LOGINSERVER, connection.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
+                    sendData(connection.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
                 }
                 catch (Exception e)
                 {
@@ -85,12 +90,37 @@ namespace Project_X_Synchronization_Server
         }
         #endregion
 
-        #region Login Server
-
-        #endregion
-
         #region Game Server
-        
+        public static void WorldRequest()
+        {
+            try
+            {
+                Log.log("Sending world request response.", Log.LogType.SENT);
+                BuildBasePacket((int)GameServerSendPacketNumbers.WorldRequest);
+                // tbl_Characters
+                int LineNumber = Log.log("Sending tbl_Characters..", Log.LogType.SENT);
+
+                buffer.WriteInteger(tbl_Characters.Count);
+                foreach (_Characters character in tbl_Characters)
+                {
+                    buffer.WriteInteger(character.Character_ID);
+                    buffer.WriteString(character.Character_Name);
+                    buffer.WriteInteger(character.Character_Level);
+                    buffer.WriteFloat(character.Pos_X);
+                    buffer.WriteFloat(character.Pos_Y);
+                    buffer.WriteFloat(character.Pos_Z);
+                    Log.log(LineNumber, "Sending tbl_Characters.. Character ID " + character.Character_ID.ToString() + "/" + tbl_Characters.Count.ToString(), Log.LogType.SENT);
+                }
+
+                data = buffer.ToArray();
+                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building World update packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
         #endregion
     }
 }

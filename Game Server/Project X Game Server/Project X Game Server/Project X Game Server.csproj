@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnimationState.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Connection.cs" />
     <Compile Include="Data.cs" />

@@ -36,9 +36,10 @@ namespace Project_X_Login_Server
             {
                 try
                 {
+                    Reset(true);
                     buffer.WriteBytes(Data);
 
-                    ConnectionType Source = (ConnectionType)buffer.ReadByte();
+                    ConnectionType Source = (ConnectionType)buffer.ReadInteger();
                     int PacketNumber = buffer.ReadInteger();
 
                     Type thisType = Type.GetType("ProcessData");
@@ -106,6 +107,7 @@ namespace Project_X_Login_Server
             switch (r)
             {
                 case Response.SUCCESSFUL:
+                    Network.instance.Clients[Index].LoggedIn = true;
                     SendData.LoginResponse(Index, 1);
                     SendData.WhiteListConfirmation(Network.instance.Clients[Index].IP);
                     break;

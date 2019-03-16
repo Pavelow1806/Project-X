@@ -38,7 +38,7 @@ namespace Project_X_Game_Server
         public const double SecondsToAuthenticateBeforeDisconnect = 5.0;
         public string AuthenticationCode = "";
         public bool SyncServerAuthenticated = false;
-        private int ServerNumber = 0;
+        private int ServerNumber = 10;
         public Client[] Clients = new Client[MaxConnections];
 
         public List<string> WhiteList = new List<string>();
@@ -122,6 +122,7 @@ namespace Project_X_Game_Server
                             Clients[i].Start();
                             Log.log("The white listed client has successfully connected to the server:", Log.LogType.CONNECTION);
                             Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
+                            Log.log("Sending initial world status to client..", Log.LogType.CONNECTION);
                             break;
                         }
                     }
@@ -147,7 +148,7 @@ namespace Project_X_Game_Server
         {
             for (int i = 0; i < WhiteList.Count; i++)
             {
-                if (ip == WhiteList[i])
+                if (ip.Substring(0, ip.IndexOf(':')) == WhiteList[i].Substring(0, WhiteList[i].IndexOf(':')))
                 {
                     return true;
                 }

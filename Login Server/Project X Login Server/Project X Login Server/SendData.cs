@@ -28,21 +28,23 @@ namespace Project_X_Login_Server
     }
     class SendData : Data
     {
-        private static void sendData(ConnectionType destination)
+        private static void sendData(ConnectionType destination, int PacketNumber)
         {
             try
             {
-                buffer.WriteBytes(data);
                 switch (destination)
                 {
                     case ConnectionType.GAMESERVER:
-                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((GameServerSendPacketNumbers)PacketNumber).ToString() + "] to Game Server.", Log.LogType.SENT);
                         break;
                     case ConnectionType.CLIENT:
-                        Network.instance.Clients[Index].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Clients[Index].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((ClientSendPacketNumbers)PacketNumber).ToString() + "] to Client Index " + Index.ToString() + ".", Log.LogType.SENT);
                         break;
                     case ConnectionType.SYNCSERVER:
-                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((SyncServerSendPacketNumbers)PacketNumber).ToString() + "] to Synchronization Server.", Log.LogType.SENT);
                         break;
                     default:
                         break;
@@ -55,12 +57,11 @@ namespace Project_X_Login_Server
                 Log.log("     Destination   > " + destination.ToString(), Log.LogType.ERROR);
                 Log.log("     Error Message > " + e.Message, Log.LogType.ERROR);
             }
-
-            Reset(true);
         }
         private static void BuildBasePacket(int packetNumber)
         {
-            buffer.WriteByte((byte)ConnectionType.LOGINSERVER);
+            Reset(true);
+            buffer.WriteInteger((int)ConnectionType.LOGINSERVER);
             buffer.WriteInteger(packetNumber);
         }
 
@@ -73,7 +74,7 @@ namespace Project_X_Login_Server
                 BuildBasePacket((int)ClientSendPacketNumbers.LoginResponse);
                 buffer.WriteByte(response);
                 data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.LoginResponse);
             }
             catch (Exception e)
             {
@@ -87,8 +88,9 @@ namespace Project_X_Login_Server
             {
                 Index = index;
                 BuildBasePacket((int)ClientSendPacketNumbers.ConfirmWhiteList);
+
                 data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.ConfirmWhiteList);
             }
             catch (Exception e)
             {
@@ -105,7 +107,7 @@ namespace Project_X_Login_Server
                 buffer.WriteByte(success);
                 buffer.WriteString(response);
                 data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.RegistrationResponse);
             }
             catch (Exception e)
             {
@@ -118,7 +120,7 @@ namespace Project_X_Login_Server
             try
             {
                 Index = index;
-                BuildBasePacket((int)ClientSendPacketNumbers.RegistrationResponse);
+                BuildBasePacket((int)ClientSendPacketNumbers.CharacterList);
                 buffer.WriteByte((success) ? (byte)1 : (byte)0);
                 buffer.WriteInteger(Network.instance.Clients[Index].Characters.Count);
                 if (success)
@@ -129,12 +131,8 @@ namespace Project_X_Login_Server
                         buffer.WriteInteger(c.Level);
                     }
                 }
-                else
-                {
-
-                }
                 data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.CharacterList);
             }
             catch (Exception e)
             {
@@ -152,7 +150,7 @@ namespace Project_X_Login_Server
                 BuildBasePacket((int)GameServerSendPacketNumbers.WhiteList);
                 buffer.WriteString(ip);
                 data = buffer.ToArray();
-                sendData(ConnectionType.GAMESERVER);
+                sendData(ConnectionType.GAMESERVER, (int)GameServerSendPacketNumbers.WhiteList);
             }
             catch (Exception e)
             {
@@ -173,7 +171,7 @@ namespace Project_X_Login_Server
                 buffer.WriteString(password);
                 buffer.WriteString(email);
                 data = buffer.ToArray();
-                sendData(ConnectionType.SYNCSERVER);
+                sendData(ConnectionType.SYNCSERVER, (int)SyncServerSendPacketNumbers.RegistrationNotification);
             }
             catch (Exception e)
             {

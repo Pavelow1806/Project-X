@@ -6,7 +6,28 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
-    class NPC
+    class NPC : Entity
     {
+        public List<Quest> quests = new List<Quest>();
+
+        public NPC(int ID) :
+            base (ID, "", 0,0,0,0)
+        {
+
+        }
+
+        protected override void BuildTransmission(out byte[] result)
+        {
+            if (Changed || AnimState.Changed)
+            {
+                base.BuildTransmission(out result);
+
+
+
+                Changed = false;
+                AnimState.Changed = false;
+            }
+            result = buffer.ToArray();
+        }
     }
 }

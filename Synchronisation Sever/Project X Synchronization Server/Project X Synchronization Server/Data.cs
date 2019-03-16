@@ -412,6 +412,7 @@ namespace Project_X_Synchronization_Server
                 }
             }
         }
+        public bool In_World = false;
 
         public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, float Pos_X, float Pos_Y, float Pos_Z)
         {

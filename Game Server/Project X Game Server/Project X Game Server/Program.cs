@@ -14,6 +14,7 @@ namespace Project_X_Game_Server
 
         private static Database db = new Database();
         private static Network nw = new Network();
+        private static World world = new World();
 
         static void Main(string[] args)
         {

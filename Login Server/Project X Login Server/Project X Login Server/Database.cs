@@ -151,6 +151,7 @@ namespace Project_X_Login_Server
             {
                 if (reader.HasRows)
                 {
+                    Network.instance.Clients[index].Characters.Clear();
                     while (reader.Read())
                     {
                         Network.instance.Clients[index].Characters.Add

@@ -22,7 +22,8 @@ namespace Project_X_Synchronization_Server
     public enum GameServerProcessPacketNumbers
     {
         Invalid,
-        AuthenticateServer
+        AuthenticateServer,
+        WorldRequest
     }
     public enum SyncServerProcessPacketNumbers
     {
@@ -81,7 +82,11 @@ namespace Project_X_Synchronization_Server
         #endregion
 
         #region Game Server Communication
-
+        private static void WorldRequest(ConnectionType type, int LineNumber)
+        {
+            Log.log(LineNumber, "Recevied request from game server for update request.", Log.LogType.RECEIVED);
+            SendData.WorldRequest();
+        }
         #endregion
 
         #region Synchronization Server Communication

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,20 +27,27 @@ namespace Project_X_Game_Server
         AuthenticateGameServer,
         ConfirmWhiteList
     }
+    public enum SyncServerSendPacketNumbers
+    {
+        Invalid,
+        AuthenticateSyncServer,
+        WorldRequest
+    }
     class SendData : Data
     {
+        public static bool PostUDPMessages = true;
+
         private static void sendData(ConnectionType destination, string PacketName)
         {
             try
             {
-                buffer.WriteBytes(data);
                 switch (destination)
                 {
-                    case ConnectionType.GAMESERVER:
-                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                    case ConnectionType.CLIENT:
+                        Network.instance.Clients[Index].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.LOGINSERVER:
-                        Network.instance.Servers[destination].Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     default:
                         break;
@@ -58,7 +67,8 @@ namespace Project_X_Game_Server
 
         private static void BuildBasePacket(int packetNumber)
         {
-            buffer.WriteByte((byte)ConnectionType.GAMESERVER);
+            Reset();
+            buffer.WriteInteger((int)ConnectionType.GAMESERVER);
             buffer.WriteInteger(packetNumber);
         }
         #region Generic
@@ -94,8 +104,8 @@ namespace Project_X_Game_Server
                 BuildBasePacket((int)LoginServerSendPacketNumbers.ConfirmWhiteList);
                 buffer.WriteString(ip);
                 data = buffer.ToArray();
-                sendData(ConnectionType.LOGINSERVER, LoginServerSendPacketNumbers.ConfirmWhiteList.ToString());
                 Log.log("Sent white list confirmation of IP: " + ip, Log.LogType.SENT);
+                sendData(ConnectionType.LOGINSERVER, LoginServerSendPacketNumbers.ConfirmWhiteList.ToString());
             }
             catch (Exception e)
             {
@@ -105,8 +115,40 @@ namespace Project_X_Game_Server
         }
         #endregion
 
-        #region Game Server
+        #region Sync Server
+        public static void WorldRequest(int LineNumber)
+        {
+            try
+            {
+                BuildBasePacket((int)SyncServerSendPacketNumbers.WorldRequest);
+                data = buffer.ToArray();
+                Log.log(LineNumber, "Requesting world status update from synchronization server..", Log.LogType.SENT);
+                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.WorldRequest.ToString());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building World Request packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+        #endregion
 
+        #region Client Communication
+        public static void SendUDPPacket(Connection connection, byte[] data)
+        {
+            try
+            {
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                IPAddress Receiver = IPAddress.Parse(connection.IP.Substring(connection.IP.IndexOf(':')));
+                IPEndPoint EndPoint = new IPEndPoint(Receiver, 5601);
+                socket.SendTo(data, EndPoint);
+                if (PostUDPMessages) Log.log("UDP Packet sent to IP: " + connection.IP.Substring(connection.IP.IndexOf(':')).ToString() + " Length: " + data.Length.ToString(), Log.LogType.SENT);
+            }
+            catch (Exception e)
+            {
+                Log.log("An error occurred when sending a UDP packet to IP: " + connection.IP.Substring(connection.IP.IndexOf(':')).ToString() + ". > " + e.Message, Log.LogType.ERROR);
+            }
+        }
         #endregion
     }
 }

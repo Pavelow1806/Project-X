@@ -246,7 +246,7 @@ namespace Project_X_Game_Server
             }
             catch (Exception e)
             {
-                //Log.log("An error occurred when beginning the streams read. > " + e.Message, Log.LogType.ERROR);
+                Log.log("An error occurred when beginning the streams read. > " + e.Message, Log.LogType.ERROR);
             }
         }
         private void HandleAsyncConnection(IAsyncResult result)
@@ -279,7 +279,7 @@ namespace Project_X_Game_Server
                             return;
                         }
 
-                        ProcessData.processData(newBytes);
+                        ProcessData.processData(Index, newBytes);
 
                         if (Socket == null)
                             return;
