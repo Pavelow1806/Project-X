@@ -1,0 +1,6 @@
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\bin\Debug\ByteBuffer.dll
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\bin\Debug\ByteBuffer.pdb
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\obj\Debug\ByteBuffer.csprojResolveAssemblyReference.cache
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\obj\Debug\ByteBuffer.csproj.CoreCompileInputs.cache
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\obj\Debug\ByteBuffer.dll
+C:\Users\james\Documents\GitHub\FMP---Server\ByteBuffer\obj\Debug\ByteBuffer.pdb
