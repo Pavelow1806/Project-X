@@ -41,7 +41,7 @@ namespace Project_X_Synchronization_Server
         #region ConnectionAttempts
         public int ConnectionAttemptCount = 0;
         private int SecondsBetweenConnectionAttempts = 5;
-        private const int MaxConnectionAttempts = 5;
+        private const int MaxConnectionAttempts = -1;
         public DateTime NextConnectAttempt = default(DateTime);
         #endregion
 
@@ -71,7 +71,7 @@ namespace Project_X_Synchronization_Server
 
         public void AttemptConnect()
         {
-            while (!Connected && ConnectionAttemptCount < MaxConnectionAttempts)
+            while ((!Connected && ConnectionAttemptCount < MaxConnectionAttempts) || (!Connected && MaxConnectionAttempts == -1))
             {
                 if (DateTime.Now >= NextConnectAttempt)
                 {
@@ -124,7 +124,7 @@ namespace Project_X_Synchronization_Server
             }
             catch (Exception e)
             {
-                if (ConnectionAttemptCount >= 5)
+                if (ConnectionAttemptCount >= MaxConnectionAttempts && MaxConnectionAttempts > -1)
                 {
                     Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
                 }
@@ -160,7 +160,7 @@ namespace Project_X_Synchronization_Server
             }
             catch (Exception e)
             {
-                if (ConnectionAttemptCount >= 5)
+                if (ConnectionAttemptCount >= MaxConnectionAttempts && MaxConnectionAttempts > -1)
                 {
                     Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
                 }
@@ -198,16 +198,21 @@ namespace Project_X_Synchronization_Server
                         return;
                     Stream.BeginRead(asyncBuff, 0, Network.BufferSize * 2, OnReceive, null);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                Log.log("An error occurred when receiving data. > " + e.Message, Log.LogType.ERROR);
+                Log.log("An error occurred when receiving data, trying to connect again.. > " + e.Message, Log.LogType.ERROR);
+                Disconnect();
             }
         }
         public void Disconnect()
         {
-            // Connection
-            IP = "";
-            Port = 0;
+            if (Type == ConnectionType.CLIENT)
+            {
+                // Connection
+                IP = "";
+                Port = 0;
+            }
             ConnectedTime = default(DateTime);
 
             // Network
@@ -235,7 +240,8 @@ namespace Project_X_Synchronization_Server
             ConnectionAttemptCount = 0;
             Authenticated = false;
             Connected = false;
-            Log.log(Type.ToString() + " disconnected.", Log.LogType.CONNECTION);
+            Log.log(Type.ToString() + " disconnected, Attempting to connect again..", Log.LogType.CONNECTION);
+            Start();
         }
     }
 }

@@ -105,8 +105,11 @@ namespace Project_X_Game_Server
         public Entity(int ID, string name, int level, float x, float y, float z)
         {
             Entity_ID = World.instance.EntityCounter;
-            ++World.instance.EntityCounter;
-
+            _Name = name;
+            _Level = level;
+            _x = x;
+            _y = y;
+            _z = z;
         }
 
         protected virtual void BuildTransmission(out byte[] data)

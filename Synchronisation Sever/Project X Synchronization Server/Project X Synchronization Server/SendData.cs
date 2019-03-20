@@ -114,6 +114,8 @@ namespace Project_X_Synchronization_Server
 
                 data = buffer.ToArray();
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString());
+
+                // 
             }
             catch (Exception e)
             {

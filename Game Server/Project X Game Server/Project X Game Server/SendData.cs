@@ -49,6 +49,9 @@ namespace Project_X_Game_Server
                     case ConnectionType.LOGINSERVER:
                         Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
+                    case ConnectionType.SYNCSERVER:
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        break;
                     default:
                         break;
                 }
@@ -61,8 +64,6 @@ namespace Project_X_Game_Server
                 Log.log("     Destination   > " + destination.ToString(), Log.LogType.ERROR);
                 Log.log("     Error Message > " + e.Message, Log.LogType.ERROR);
             }
-
-            Reset();
         }
 
         private static void BuildBasePacket(int packetNumber)
@@ -127,7 +128,7 @@ namespace Project_X_Game_Server
             }
             catch (Exception e)
             {
-                Log.log("Building World Request packet failed. > " + e.Message, Log.LogType.ERROR);
+                Log.log(LineNumber, "Building World Request packet failed. > " + e.Message, Log.LogType.ERROR);
                 return;
             }
         }

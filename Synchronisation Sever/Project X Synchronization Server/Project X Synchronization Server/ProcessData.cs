@@ -32,42 +32,49 @@ namespace Project_X_Synchronization_Server
     }
     class ProcessData : Data
     {
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
         public static void processData(byte[] Data)
         {
-            buffer.WriteBytes(data);
-
-            ConnectionType Source = (ConnectionType)buffer.ReadByte();
-            int PacketNumber = buffer.ReadInteger();
-
-            Type thisType = Type.GetType("ProcessData");
-
-            data = Data;
-            object[] obj = new object[1];
-            switch (Source)
+            lock (lockObj)
             {
-                case ConnectionType.GAMESERVER:
-                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(GameServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[ConnectionType.GAMESERVER].Socket == null)
-                    {
-                        return;
-                    }
-                    Log.log("Packet Received [#" + PacketNumber.ToString("000") + " N" + ((GameServerProcessPacketNumbers)PacketNumber).ToString() + "] from " + ConnectionType.LOGINSERVER.ToString() + ", Processing response..", Log.LogType.RECEIVED);
-                    obj[0] = Source;
-                    thisType.InvokeMember(((GameServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, obj);
-                    break;
-                case ConnectionType.LOGINSERVER:
-                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(LoginServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[ConnectionType.LOGINSERVER].Socket == null)
-                    {
-                        return;
-                    }
-                    Log.log("Packet Received [#" + PacketNumber.ToString("000") + " N" + ((LoginServerProcessPacketNumbers)PacketNumber).ToString() + "] from " + ConnectionType.GAMESERVER.ToString() + ", Processing response..", Log.LogType.RECEIVED);
-                    obj[0] = Source;
-                    thisType.InvokeMember(((LoginServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, obj);
-                    break;
-                default:
-                    break;
-            }
+                Reset();
 
-            Reset();
+                buffer.WriteBytes(Data);
+
+                ConnectionType Source = (ConnectionType)buffer.ReadInteger();
+                int PacketNumber = buffer.ReadInteger();
+
+                Type thisType = Type.GetType("ProcessData");
+
+                data = Data;
+                object[] obj = new object[1];
+                switch (Source)
+                {
+                    case ConnectionType.GAMESERVER:
+                        if (PacketNumber == 0 || !Enum.IsDefined(typeof(GameServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[ConnectionType.GAMESERVER].Socket == null)
+                        {
+                            return;
+                        }
+                        Log.log("Packet Received [#" + PacketNumber.ToString("000") + " " + ((GameServerProcessPacketNumbers)PacketNumber).ToString() + "] from " + ConnectionType.LOGINSERVER.ToString() + ", Processing response..", Log.LogType.RECEIVED);
+                        obj[0] = Source;
+                        typeof(ProcessData).InvokeMember(((GameServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
+                        break;
+                    case ConnectionType.LOGINSERVER:
+                        if (PacketNumber == 0 || !Enum.IsDefined(typeof(LoginServerProcessPacketNumbers), PacketNumber) || Network.instance.Servers[ConnectionType.LOGINSERVER].Socket == null)
+                        {
+                            return;
+                        }
+                        Log.log("Packet Received [#" + PacketNumber.ToString("000") + " " + ((LoginServerProcessPacketNumbers)PacketNumber).ToString() + "] from " + ConnectionType.GAMESERVER.ToString() + ", Processing response..", Log.LogType.RECEIVED);
+                        obj[0] = Source;
+                        typeof(ProcessData).InvokeMember(((LoginServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
+                        break;
+                    default:
+                        break;
+                }
+
+            }
         }
 
         #region Server Communication
@@ -82,9 +89,9 @@ namespace Project_X_Synchronization_Server
         #endregion
 
         #region Game Server Communication
-        private static void WorldRequest(ConnectionType type, int LineNumber)
+        private static void WorldRequest(ConnectionType type)
         {
-            Log.log(LineNumber, "Recevied request from game server for update request.", Log.LogType.RECEIVED);
+            Log.log("Recevied request from game server for update request.", Log.LogType.RECEIVED);
             SendData.WorldRequest();
         }
         #endregion

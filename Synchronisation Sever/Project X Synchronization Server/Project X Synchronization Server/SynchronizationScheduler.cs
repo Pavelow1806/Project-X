@@ -61,6 +61,7 @@ namespace Project_X_Synchronization_Server
         {
             SecondsUntilSynchronization = (int)((NextSynchronization - DateTime.Now).TotalSeconds);
             int LastSeconds = 0;
+            int LineNumber = Log.log("Starting synchronization of data..", Log.LogType.SYNC);
             while (Running)
             {
                 lock (lockObj)
@@ -69,7 +70,7 @@ namespace Project_X_Synchronization_Server
                     if (SecondsUntilSynchronization < 0 || SyncNow)
                     {
                         // Synchronize
-                        LineNumber = Log.log("Starting synchronization of data..", Log.LogType.SYNC);
+                        Log.log(LineNumber, "Starting synchronization of data..", Log.LogType.SYNC);
                         Response r = Database.instance.Synchronize(LineNumber);
                         switch (r)
                         {
@@ -87,7 +88,7 @@ namespace Project_X_Synchronization_Server
                         }
                         NextSynchronization = DateTime.Now.AddSeconds(SecondsBetweenSynchronizations);
                         SyncNow = false;
-                        LineNumber = -1;
+                        //LineNumber = -1;
                     }
                     else
                     {

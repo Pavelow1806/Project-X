@@ -24,11 +24,25 @@ namespace Project_X_Login_Server
     }
     class Database
     {
-        public static Database instance;
-
         #region Locking
         private static readonly object lockObj = new object();
         #endregion
+
+        private static Database _instance = null;
+        public static Database instance
+        {
+            get
+            {
+                lock (lockObj)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new Database();
+                    }
+                    return _instance;
+                }
+            }
+        }
 
         MySqlConnection Connection = null;
         MySqlCommand Command = null;
@@ -37,7 +51,6 @@ namespace Project_X_Login_Server
 
         public Database()
         {
-            instance = this;
             Connection = new MySqlConnection(ConnectionString);
             Connection.Open();
         }

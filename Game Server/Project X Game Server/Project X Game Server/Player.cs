@@ -29,8 +29,8 @@ namespace Project_X_Game_Server
             }
         }
 
-        public Player(int ID, int _Character_ID, string _Name, int _Level, float _x, float _y, float _z) :
-            base (ID, "", 0,0,0,0)
+        public Player(int _Character_ID, string _Name, int _Level, float _x, float _y, float _z) :
+            base (_Character_ID, "", 0, 0.0f, 0.0f, 0.0f)
         {
             Character_ID = _Character_ID;
         }

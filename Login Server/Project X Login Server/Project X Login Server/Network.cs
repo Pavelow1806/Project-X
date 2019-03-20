@@ -10,7 +10,25 @@ namespace Project_X_Login_Server
 {
     class Network
     {
-        public static Network instance;
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
+
+        private static Network _instance = null;
+        public static Network instance
+        {
+            get
+            {
+                lock (lockObj)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new Network();
+                    }
+                    return _instance;
+                }
+            }
+        }
 
         private SendData SD = new SendData();
         private ProcessData PD = new ProcessData();
@@ -35,12 +53,12 @@ namespace Project_X_Login_Server
         private int ServerNumber = 10;
         public Client[] Clients = new Client[MaxConnections];
         #endregion
-
+        
         public Network()
         {
-            instance = this;
+            _instance = this;
         }
-        
+
         public bool LaunchServer()
         {
             AuthenticationCode = Database.instance.RequestAuthenticationCode();

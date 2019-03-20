@@ -42,8 +42,6 @@ namespace Project_X_Login_Server
                     ConnectionType Source = (ConnectionType)buffer.ReadInteger();
                     int PacketNumber = buffer.ReadInteger();
 
-                    Type thisType = Type.GetType("ProcessData");
-
                     Index = index;
                     data = Data;
                     object[] obj;

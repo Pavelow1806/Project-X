@@ -38,6 +38,7 @@ namespace Project_X_Game_Server
             base.Disconnect();
             ConnectionAttemptCount = 0;
             Authenticated = false;
+            Network.instance.SyncServerAuthenticated = false;
         }
         public void CheckAuthentication()
         {
@@ -52,6 +53,8 @@ namespace Project_X_Game_Server
                 {
                     msg = "ready for client connections.";
                 }
+                int LineNumber = Log.log("Requesting initial world status from Synchronization Server..", Log.LogType.SYSTEM);
+                SendData.WorldRequest(LineNumber);
                 Log.log("Authentication of " + Type.ToString() + " successful, starting world data stream.. " + msg, Log.LogType.SUCCESS);
                 WorldThread = new Thread(new ThreadStart(WorldStream));
                 WorldThread.Start();

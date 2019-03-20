@@ -63,14 +63,19 @@ namespace Project_X_Game_Server
             }
             try
             {
+                LineNumber = Log.log("Starting Login Server connection..", Log.LogType.SYSTEM);
                 Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200", CommunicationType.Send));
                 Servers[ConnectionType.LOGINSERVER].Start();
+                Log.log(LineNumber, "Starting Login Server connector started.", Log.LogType.SUCCESS);
+
+                LineNumber = Log.log("Starting Client/Synchronization Listener..", Log.LogType.SYSTEM);
                 for (int i = 0; i < MaxConnections; i++)
                 {
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
                 }
                 Listener.Start();
                 StartAccept();
+                Log.log(LineNumber, "Client/Synchronization Listener started.", Log.LogType.SUCCESS);
             }
             catch (Exception e)
             {
@@ -95,6 +100,10 @@ namespace Project_X_Game_Server
             socket.NoDelay = false;
             if (!SyncServerAuthenticated)
             {
+                if (Servers.ContainsKey(ConnectionType.SYNCSERVER))
+                {
+                    Servers.Remove(ConnectionType.SYNCSERVER);
+                }
                 Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, socket.Client.RemoteEndPoint.ToString(), CommunicationType.Receive));
                 Servers[(ConnectionType)ServerNumber].Connected = true;
                 Servers[(ConnectionType)ServerNumber].Authenticated = false;
@@ -103,7 +112,14 @@ namespace Project_X_Game_Server
                 Servers[(ConnectionType)ServerNumber].SessionID = "System";
                 Servers[(ConnectionType)ServerNumber].Start();
                 Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
-                Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                if (Servers.ContainsKey((ConnectionType)ServerNumber))
+                {
+                    Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                }
+                else
+                {
+                    Log.log("IP: " + Servers[ConnectionType.SYNCSERVER].IP, Log.LogType.CONNECTION);
+                }
                 Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
                 ++ServerNumber;
             }

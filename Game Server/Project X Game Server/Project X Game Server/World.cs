@@ -10,9 +10,17 @@ namespace Project_X_Game_Server
     {
         public static World instance;
 
-        public int EntityCounter = 0;
-        public List<Entity> entities = new List<Entity>();
-
+        private int entityCounter = 0;
+        public int EntityCounter
+        {
+            get
+            {
+                return ++entityCounter;
+            }
+        }
+        public List<Player> players = new List<Player>();
+        public List<NPC> NPCs = new List<NPC>();
+        
         public List<Quest> quests = new List<Quest>();
 
         public World()
@@ -32,8 +40,9 @@ namespace Project_X_Game_Server
 
         public void Reset()
         {
-            EntityCounter = 0;
-            entities.Clear();
+            entityCounter = 0;
+            players.Clear();
+            NPCs.Clear();
             quests.Clear();
         }
     }

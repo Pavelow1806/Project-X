@@ -52,7 +52,7 @@ namespace Project_X_Game_Server
         public bool ShouldHandleData = false;
         public int ConnectionAttemptCount = 0;
         private int SecondsBetweenConnectionAttempts = 5;
-        private const int MaxConnectionAttempts = 5;
+        private const int MaxConnectionAttempts = -1;
         public DateTime NextConnectAttempt = default(DateTime);
 
 
@@ -123,7 +123,7 @@ namespace Project_X_Game_Server
         #region Send (Connect to another server)
         public void AttemptConnect()
         {
-            while (!Connected && ConnectionAttemptCount < MaxConnectionAttempts)
+            while ((!Connected && ConnectionAttemptCount < MaxConnectionAttempts) || (!Connected && MaxConnectionAttempts == -1))
             {
                 if (DateTime.Now >= NextConnectAttempt)
                 {
@@ -175,7 +175,7 @@ namespace Project_X_Game_Server
             }
             catch (Exception e)
             {
-                if (ConnectionAttemptCount >= 5)
+                if (ConnectionAttemptCount >= MaxConnectionAttempts && MaxConnectionAttempts > -1)
                 {
                     Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
                 }
@@ -211,7 +211,7 @@ namespace Project_X_Game_Server
             }
             catch (Exception e)
             {
-                if (ConnectionAttemptCount >= 5)
+                if (ConnectionAttemptCount >= MaxConnectionAttempts && MaxConnectionAttempts > -1)
                 {
                     Log.log(LineNumber, "Connection to " + Type.ToString() + " unsuccessful, the retry attempts reached the maximum (" + MaxConnectionAttempts.ToString() + "), type connect [SERVER NAME] to reattempt.", Log.LogType.ERROR);
                 }

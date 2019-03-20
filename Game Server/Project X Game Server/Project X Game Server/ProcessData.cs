@@ -116,12 +116,14 @@ namespace Project_X_Game_Server
         #region Synchronization Server Communication
         private static void WorldRequest(ConnectionType type)
         {
-
+            int LineNumber = Log.log("Processing world request packet..", Log.LogType.RECEIVED);
             int Character_Count = buffer.ReadInteger();
             for (int i = 0; i < Character_Count; i++)
             {
-               // World.instance.entities.Add(new Player(World.instance.EntityCounter, buffer.ReadInteger()));
+                World.instance.players.Add(new Player(buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat()));
+                Log.log(LineNumber, "Processing world request packet.. Added character " + i.ToString() + "/" + Character_Count.ToString(), Log.LogType.RECEIVED);
             }
+            Log.log(LineNumber, "Processing world request packet.. Added characters (" + Character_Count.ToString() + ")", Log.LogType.SUCCESS);
         }
         #endregion
     }
