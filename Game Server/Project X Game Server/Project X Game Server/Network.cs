@@ -17,8 +17,13 @@ namespace Project_X_Game_Server
     }
     class Network
     {
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
+
         public static Network instance;
 
+        private Thread CheckConnectionThread;
         public static bool Running = false;
 
         #region TCP
@@ -76,6 +81,8 @@ namespace Project_X_Game_Server
                 Listener.Start();
                 StartAccept();
                 Log.log(LineNumber, "Client/Synchronization Listener started.", Log.LogType.SUCCESS);
+                CheckConnectionThread = new Thread(new ThreadStart(CheckConnection));
+                CheckConnectionThread.Start(); 
             }
             catch (Exception e)
             {
@@ -96,57 +103,60 @@ namespace Project_X_Game_Server
         }
         public void OnConnect(IAsyncResult result)
         {
-            TcpClient socket = Listener.EndAcceptTcpClient(result);
-            socket.NoDelay = false;
-            if (!SyncServerAuthenticated)
+            lock (lockObj)
             {
-                if (Servers.ContainsKey(ConnectionType.SYNCSERVER))
+                TcpClient socket = Listener.EndAcceptTcpClient(result);
+                socket.NoDelay = false;
+                if (!SyncServerAuthenticated)
                 {
-                    Servers.Remove(ConnectionType.SYNCSERVER);
-                }
-                Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, socket.Client.RemoteEndPoint.ToString(), CommunicationType.Receive));
-                Servers[(ConnectionType)ServerNumber].Connected = true;
-                Servers[(ConnectionType)ServerNumber].Authenticated = false;
-                Servers[(ConnectionType)ServerNumber].Socket = socket;
-                Servers[(ConnectionType)ServerNumber].Username = "System";
-                Servers[(ConnectionType)ServerNumber].SessionID = "System";
-                Servers[(ConnectionType)ServerNumber].Start();
-                Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
-                if (Servers.ContainsKey((ConnectionType)ServerNumber))
-                {
-                    Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                    if (Servers.ContainsKey(ConnectionType.SYNCSERVER))
+                    {
+                        Servers.Remove(ConnectionType.SYNCSERVER);
+                    }
+                    Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber, SyncServerPort, socket.Client.RemoteEndPoint.ToString(), CommunicationType.Receive));
+                    Servers[(ConnectionType)ServerNumber].Connected = true;
+                    Servers[(ConnectionType)ServerNumber].Authenticated = false;
+                    Servers[(ConnectionType)ServerNumber].Socket = socket;
+                    Servers[(ConnectionType)ServerNumber].Username = "System";
+                    Servers[(ConnectionType)ServerNumber].SessionID = "System";
+                    Servers[(ConnectionType)ServerNumber].Start();
+                    Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
+                    if (Servers.ContainsKey((ConnectionType)ServerNumber))
+                    {
+                        Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                    }
+                    else
+                    {
+                        Log.log("IP: " + Servers[ConnectionType.SYNCSERVER].IP, Log.LogType.CONNECTION);
+                    }
+                    Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
+                    ++ServerNumber;
                 }
                 else
                 {
-                    Log.log("IP: " + Servers[ConnectionType.SYNCSERVER].IP, Log.LogType.CONNECTION);
-                }
-                Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
-                ++ServerNumber;
-            }
-            else
-            {
-                if (CheckWhiteList(socket.Client.RemoteEndPoint.ToString()))
-                {
-                    Log.log("Client found in white-list, proceeding with accepting incoming connection..", Log.LogType.SUCCESS);
-                    for (int i = 0; i < MaxConnections; i++)
+                    if (CheckWhiteList(socket.Client.RemoteEndPoint.ToString().Substring(0, socket.Client.RemoteEndPoint.ToString().IndexOf(':'))))
                     {
-                        if (Clients[i].Socket == null)
+                        Log.log("Client found in white-list, proceeding with accepting incoming connection..", Log.LogType.SUCCESS);
+                        for (int i = 0; i < MaxConnections; i++)
                         {
-                            Clients[i].Connected = true;
-                            Clients[i].Socket = socket;
-                            Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
-                            Clients[i].Start();
-                            Log.log("The white listed client has successfully connected to the server:", Log.LogType.CONNECTION);
-                            Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
-                            Log.log("Sending initial world status to client..", Log.LogType.CONNECTION);
-                            break;
+                            if (Clients[i].Socket == null)
+                            {
+                                Clients[i].Connected = true;
+                                Clients[i].Socket = socket;
+                                Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
+                                Clients[i].Start();
+                                Log.log("The white listed client has successfully connected to the server:", Log.LogType.CONNECTION);
+                                Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
+                                Log.log("Sending initial world status to client..", Log.LogType.CONNECTION);
+                                break;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    Log.log("Client not found in white-list, denying connection.", Log.LogType.WARNING);
-                    socket.Close();
+                    else
+                    {
+                        Log.log("Client not found in white-list, denying connection.", Log.LogType.WARNING);
+                        socket.Close();
+                    }
                 }
             }
         }
@@ -164,12 +174,43 @@ namespace Project_X_Game_Server
         {
             for (int i = 0; i < WhiteList.Count; i++)
             {
-                if (ip.Substring(0, ip.IndexOf(':')) == WhiteList[i].Substring(0, WhiteList[i].IndexOf(':')))
+                if (ip == WhiteList[i])
                 {
                     return true;
                 }
             }
             return false;
+        }
+        public void RemoveWhiteList(string ip)
+        {
+            WhiteList.Remove(ip);
+        }
+        public void CheckConnection()
+        {
+            DateTime NextCheck = DateTime.Now.AddSeconds(5.0);
+            int LineNumber = Log.log("Checking Client connections..", Log.LogType.SYSTEM); ;
+            while (Running)
+            {
+                if (DateTime.Now >= NextCheck)
+                {
+                    Log.log(LineNumber, "Checking Client connections..", Log.LogType.SYSTEM);
+                    int ClientCount = 0;
+                    int ClientDisconnectCount = 0;
+                    foreach (Client client in Clients)
+                    {
+                        if (client.Socket != null)
+                        {
+                            ++ClientCount;
+                            if (!client.IsConnected)
+                            {
+                                ++ClientDisconnectCount;
+                            }
+                            Log.log(LineNumber, "Checking Client connections.. Found " + ClientDisconnectCount.ToString() + "/" + ClientCount.ToString() + " disconnected clients.", Log.LogType.SYSTEM);
+                        }
+                    }
+                    NextCheck = DateTime.Now.AddSeconds(5.0);
+                }
+            }
         }
     }
 }

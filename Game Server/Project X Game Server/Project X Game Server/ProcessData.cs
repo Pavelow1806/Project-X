@@ -10,9 +10,7 @@ namespace Project_X_Game_Server
     public enum ClientProcessPacketNumbers
     {
         Invalid,
-        LoginRequest,
-        RegistrationRequest,
-        CharacterListRequest
+        EnterWorld
     }
     public enum LoginServerProcessPacketNumbers
     {
@@ -72,6 +70,16 @@ namespace Project_X_Game_Server
                         obj[0] = Source;
                         typeof(ProcessData).InvokeMember(((LoginServerProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
                         break;
+                    case ConnectionType.CLIENT:
+                        if (PacketNumber == 0 || !Enum.IsDefined(typeof(ClientProcessPacketNumbers), PacketNumber) || Network.instance.Clients[Index].Socket == null)
+                        {
+                            return;
+                        }
+                        Log.log("Packet Received [#" + PacketNumber.ToString("000") + " " + ((ClientProcessPacketNumbers)PacketNumber).ToString() + "] from " + ConnectionType.CLIENT.ToString() + ", Processing response..", Log.LogType.RECEIVED);
+                        obj = new object[1];
+                        obj[0] = Source;
+                        typeof(ProcessData).InvokeMember(((ClientProcessPacketNumbers)PacketNumber).ToString(), BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Static, null, null, obj);
+                        break;
                     default:
                         break;
                 }
@@ -99,16 +107,16 @@ namespace Project_X_Game_Server
         private static void WhiteList(ConnectionType type)
         {
             string ip = buffer.ReadString();
-            int LineNumber = Log.log("Checking white list for IP: " + ip + "..", Log.LogType.RECEIVED);
-            if (!Network.instance.CheckWhiteList(ip))
+            int LineNumber = Log.log("Checking white list for IP: " + ip.Substring(0, ip.IndexOf(':')) + "..", Log.LogType.RECEIVED);
+            if (!Network.instance.CheckWhiteList(ip.Substring(0, ip.IndexOf(':'))))
             {
-                Network.instance.WhiteList.Add(ip);
-                Log.log(LineNumber, "Client IP: " + ip + " added successfully, sending confirmation to login server.", Log.LogType.RECEIVED);
-                SendData.ConfirmWhiteList(ip);
+                Network.instance.WhiteList.Add(ip.Substring(0, ip.IndexOf(':')));
+                Log.log(LineNumber, "Client IP: " + ip.Substring(0, ip.IndexOf(':')) + " added successfully, sending confirmation to login server.", Log.LogType.RECEIVED);
+                SendData.ConfirmWhiteList(ip.Substring(0, ip.IndexOf(':')));
             }
             else
             {
-                Log.log(LineNumber, "Client IP: " + ip + " was already white listed.", Log.LogType.WARNING);
+                Log.log(LineNumber, "Client IP: " + ip.Substring(0, ip.IndexOf(':')) + " was already white listed.", Log.LogType.WARNING);
             }
         }
         #endregion
@@ -124,6 +132,15 @@ namespace Project_X_Game_Server
                 Log.log(LineNumber, "Processing world request packet.. Added character " + i.ToString() + "/" + Character_Count.ToString(), Log.LogType.RECEIVED);
             }
             Log.log(LineNumber, "Processing world request packet.. Added characters (" + Character_Count.ToString() + ")", Log.LogType.SUCCESS);
+        }
+        #endregion
+
+        #region Client Communication
+        private static void EnterWorld(ConnectionType type)
+        {
+            string Character_Name = buffer.ReadString();
+            Log.log("Account " + Network.instance.Clients[Index].Username + " is entering the world with " + Character_Name + "..", Log.LogType.SUCCESS);
+
         }
         #endregion
     }

@@ -29,8 +29,25 @@ namespace Project_X_Game_Server
             }
         }
 
+        private bool _InWorld = false;
+        public bool InWorld
+        {
+            get
+            {
+                return _InWorld;
+            }
+            set
+            {
+                if (_InWorld != value)
+                {
+                    Changed = true;
+                    _InWorld = value;
+                }
+            }
+        }
+
         public Player(int _Character_ID, string _Name, int _Level, float _x, float _y, float _z) :
-            base (_Character_ID, "", 0, 0.0f, 0.0f, 0.0f)
+            base (_Character_ID, _Name, _Level, _x, _y, _z)
         {
             Character_ID = _Character_ID;
         }

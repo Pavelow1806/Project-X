@@ -33,6 +33,42 @@ namespace Project_X_Game_Server
         public string Username = "";
         public string SessionID = "";
         public bool Connected = false;
+        public bool IsConnected
+        {
+            get
+            {
+                try
+                {
+                    if (Socket != null && Socket.Client != null && Socket.Client.Connected)
+                    {
+                        if (Socket.Client.Poll(0, SelectMode.SelectRead))
+                        {
+                            byte[] buff = new byte[1];
+                            if (Socket.Client.Receive(buff, SocketFlags.Peek) == 0)
+                            {
+                                Disconnect();
+                                return false;
+                            }
+                            else
+                            {
+                                return true;
+                            }
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        Disconnect();
+                        return false;
+                    }
+                }
+                catch
+                {
+                    Disconnect();
+                    return false;
+                }
+            }
+        }
         public DateTime ConnectedTime = default(DateTime);
         public CommunicationType Communication;
         public StreamReader Reader = null;
@@ -85,9 +121,15 @@ namespace Project_X_Game_Server
         public virtual void Disconnect()
         {
             // Connection
-            IP = "";
+            Log.log("Connection to " + Type.ToString() + " : " + IP.ToString() + " disconnected, socket " + Index.ToString() + " now free.", Log.LogType.CONNECTION);
+
+            if (Type == ConnectionType.CLIENT)
+            {
+                IP = "";
+            }
             Username = "";
             ConnectedTime = default(DateTime);
+            Connected = false;
 
             // Network
             ReadBuff = null;
@@ -111,10 +153,8 @@ namespace Project_X_Game_Server
                 Writer.Close();
                 Writer = null;
             }
-            if (Network.instance.Servers.ContainsKey(Type))
-            {
-                Network.instance.Servers.Remove(Type);
-            }
+            Log.log(Type.ToString() + " disconnected.. " + ((Type != ConnectionType.CLIENT) ? " Attempting to connect again.." : ""), Log.LogType.CONNECTION);
+            Start();
             // Rejoin main thread
             ConnectionThread.Join();
         }
@@ -226,11 +266,19 @@ namespace Project_X_Game_Server
         #region Receive (Received connection from another server/client)
         public void BeginReceive()
         {
-            Socket.SendBufferSize = Network.BufferSize;
-            Socket.ReceiveBufferSize = Network.BufferSize;
-            Stream = Socket.GetStream();
-            Array.Resize(ref ReadBuff, Socket.ReceiveBufferSize);
-            StartAccept();
+            try
+            {
+                Socket.SendBufferSize = Network.BufferSize;
+                Socket.ReceiveBufferSize = Network.BufferSize;
+                Stream = Socket.GetStream();
+                Array.Resize(ref ReadBuff, Socket.ReceiveBufferSize);
+                StartAccept();
+            }
+            catch (Exception e)
+            {
+                Log.log("Connection lost to " + Type.ToString(), Log.LogType.ERROR);
+                Disconnect();
+            }
         }
         private void StartAccept()
         {
@@ -289,6 +337,7 @@ namespace Project_X_Game_Server
                 catch (Exception e)
                 {
                     Log.log("An error occurred when receiving data. > " + e.Message, Log.LogType.ERROR);
+                    Disconnect();
                 }
             }
         }

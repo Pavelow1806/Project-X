@@ -14,7 +14,8 @@ namespace Project_X_Game_Server
         Invalid,
         LoginResponse,
         RegistrationResponse,
-        CharacterList
+        CharacterList,
+        WorldPacket
     }
     public enum ServerSendPacketNumbers
     {
@@ -148,6 +149,23 @@ namespace Project_X_Game_Server
             catch (Exception e)
             {
                 Log.log("An error occurred when sending a UDP packet to IP: " + connection.IP.Substring(connection.IP.IndexOf(':')).ToString() + ". > " + e.Message, Log.LogType.ERROR);
+            }
+        }
+        public static void WorldPacket(int index)
+        {
+            try
+            {
+                BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket);
+                Index = index;
+                //TBC
+                data = buffer.ToArray();
+                Log.log("Sending initial world packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building initial world packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
             }
         }
         #endregion

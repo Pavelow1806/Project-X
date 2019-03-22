@@ -99,44 +99,47 @@ namespace Project_X_Login_Server
         }
         public void OnConnect(IAsyncResult result)
         {
-            try
+            lock (lockObj)
             {
-                TcpClient socket = Listener.EndAcceptTcpClient(result);
-                socket.NoDelay = false;
-                if (!GameServerAuthenticated || !SyncServerAuthenticated)
+                try
                 {
-                    Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber));
-                    Servers[(ConnectionType)ServerNumber].Connected = true;
-                    Servers[(ConnectionType)ServerNumber].Socket = socket;
-                    Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();
-                    Servers[(ConnectionType)ServerNumber].Username = "System";
-                    Servers[(ConnectionType)ServerNumber].SessionID = "System";
-                    Servers[(ConnectionType)ServerNumber].Start();
-                    Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
-                    Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
-                    Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
-                    ++ServerNumber;
-                }
-                else
-                {
-                    for (int i = 0; i < MaxConnections; i++)
+                    TcpClient socket = Listener.EndAcceptTcpClient(result);
+                    socket.NoDelay = false;
+                    if (!GameServerAuthenticated || !SyncServerAuthenticated)
                     {
-                        if (Clients[i].Socket == null)
+                        Servers.Add((ConnectionType)ServerNumber, new Server(ConnectionType.SYNCSERVER, ServerNumber));
+                        Servers[(ConnectionType)ServerNumber].Connected = true;
+                        Servers[(ConnectionType)ServerNumber].Socket = socket;
+                        Servers[(ConnectionType)ServerNumber].IP = socket.Client.RemoteEndPoint.ToString();
+                        Servers[(ConnectionType)ServerNumber].Username = "System";
+                        Servers[(ConnectionType)ServerNumber].SessionID = "System";
+                        Servers[(ConnectionType)ServerNumber].Start();
+                        Log.log("Contact from potential server made: ", Log.LogType.CONNECTION);
+                        Log.log("IP: " + Servers[(ConnectionType)ServerNumber].IP, Log.LogType.CONNECTION);
+                        Log.log("Waiting for authentication packet..", Log.LogType.CONNECTION);
+                        ++ServerNumber;
+                    }
+                    else
+                    {
+                        for (int i = 0; i < MaxConnections; i++)
                         {
-                            Clients[i].Connected = true;
-                            Clients[i].Socket = socket;
-                            Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
-                            Clients[i].Start();
-                            Log.log("A client has connected to the server:", Log.LogType.CONNECTION);
-                            Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
-                            break;
+                            if (Clients[i].Socket == null)
+                            {
+                                Clients[i].Connected = true;
+                                Clients[i].Socket = socket;
+                                Clients[i].IP = socket.Client.RemoteEndPoint.ToString();
+                                Clients[i].Start();
+                                Log.log("A client has connected to the server:", Log.LogType.CONNECTION);
+                                Log.log("IP: " + Clients[i].IP, Log.LogType.CONNECTION);
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Log.log("There was an error on connection. > " + e.Message, Log.LogType.ERROR);
+                catch (Exception e)
+                {
+                    Log.log("There was an error on connection. > " + e.Message, Log.LogType.ERROR);
+                }
             }
         }
         public void CheckAuthentication()
@@ -153,7 +156,7 @@ namespace Project_X_Login_Server
         {
             for (int i = 0; i < Clients.Length; i++)
             {
-                if (Clients[i].IP == ip)
+                if (Clients[i].IP.Substring(0, Clients[i].IP.IndexOf(':')) == ip)
                 {
                     return i;
                 }

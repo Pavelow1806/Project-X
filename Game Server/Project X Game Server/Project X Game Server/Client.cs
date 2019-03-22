@@ -26,11 +26,16 @@ namespace Project_X_Game_Server
 
         public override void Disconnect()
         {
-            Username = "";
-            Email = "";
-            LoggedIn = false;
-            LoggedInTime = default(DateTime);
-            base.Disconnect();
+            if (Connected)
+            {
+                Username = "";
+                Email = "";
+                LoggedIn = false;
+                LoggedInTime = default(DateTime);
+                Network.instance.RemoveWhiteList(IP.Substring(0, IP.IndexOf(':')));
+                Log.log("Removed IP " + IP.Substring(0, IP.IndexOf(':')) + " from whitelist.", Log.LogType.SYSTEM);
+                base.Disconnect();
+            }
         }
     }
 }
