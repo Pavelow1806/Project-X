@@ -53,9 +53,9 @@ namespace Project_X_Synchronization_Server
             Data.Initialise();
             try
             {
-                Servers.Add(ConnectionType.LOGINSERVER, new Connection(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200"));
+                Servers.Add(ConnectionType.LOGINSERVER, new Connection(ConnectionType.LOGINSERVER, 0, LoginServerPort, "127.0.0.1"));
                 Servers[ConnectionType.LOGINSERVER].Start();
-                Servers.Add(ConnectionType.GAMESERVER, new Connection(ConnectionType.GAMESERVER, 1, GameServerPort, "192.168.0.200"));
+                Servers.Add(ConnectionType.GAMESERVER, new Connection(ConnectionType.GAMESERVER, 1, GameServerPort, "127.0.0.1"));
                 Servers[ConnectionType.GAMESERVER].Start();
             }
             catch (Exception e)
