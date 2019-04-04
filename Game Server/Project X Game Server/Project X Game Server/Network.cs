@@ -69,7 +69,9 @@ namespace Project_X_Game_Server
             try
             {
                 LineNumber = Log.log("Starting Login Server connection..", Log.LogType.SYSTEM);
-                Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200", CommunicationType.Send));
+                Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "127.0.0.1", CommunicationType.Send));
+                //Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200", CommunicationType.Send));
+                //Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "18.219.100.207", CommunicationType.Send));
                 Servers[ConnectionType.LOGINSERVER].Start();
                 Log.log(LineNumber, "Starting Login Server connector started.", Log.LogType.SUCCESS);
 
