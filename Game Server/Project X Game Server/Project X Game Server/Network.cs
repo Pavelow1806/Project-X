@@ -23,7 +23,7 @@ namespace Project_X_Game_Server
 
         public static Network instance;
 
-        private Thread CheckConnectionThread;
+        //private Thread CheckConnectionThread;
         public static bool Running = false;
 
         #region TCP
@@ -70,8 +70,6 @@ namespace Project_X_Game_Server
             {
                 LineNumber = Log.log("Starting Login Server connection..", Log.LogType.SYSTEM);
                 Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "127.0.0.1", CommunicationType.Send));
-                //Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "192.168.0.200", CommunicationType.Send));
-                //Servers.Add(ConnectionType.LOGINSERVER, new Server(ConnectionType.LOGINSERVER, 0, LoginServerPort, "18.219.100.207", CommunicationType.Send));
                 Servers[ConnectionType.LOGINSERVER].Start();
                 Log.log(LineNumber, "Starting Login Server connector started.", Log.LogType.SUCCESS);
 
@@ -83,8 +81,8 @@ namespace Project_X_Game_Server
                 Listener.Start();
                 StartAccept();
                 Log.log(LineNumber, "Client/Synchronization Listener started.", Log.LogType.SUCCESS);
-                CheckConnectionThread = new Thread(new ThreadStart(CheckConnection));
-                CheckConnectionThread.Start(); 
+                //CheckConnectionThread = new Thread(new ThreadStart(CheckConnection));
+                //CheckConnectionThread.Start(); 
             }
             catch (Exception e)
             {
@@ -187,32 +185,32 @@ namespace Project_X_Game_Server
         {
             WhiteList.Remove(ip);
         }
-        public void CheckConnection()
-        {
-            DateTime NextCheck = DateTime.Now.AddSeconds(5.0);
-            int LineNumber = Log.log("Checking Client connections..", Log.LogType.SYSTEM); ;
-            while (Running)
-            {
-                if (DateTime.Now >= NextCheck)
-                {
-                    Log.log(LineNumber, "Checking Client connections..", Log.LogType.SYSTEM);
-                    int ClientCount = 0;
-                    int ClientDisconnectCount = 0;
-                    foreach (Client client in Clients)
-                    {
-                        if (client.Socket != null)
-                        {
-                            ++ClientCount;
-                            if (!client.IsConnected)
-                            {
-                                ++ClientDisconnectCount;
-                            }
-                            Log.log(LineNumber, "Checking Client connections.. Found " + ClientDisconnectCount.ToString() + "/" + ClientCount.ToString() + " disconnected clients.", Log.LogType.SYSTEM);
-                        }
-                    }
-                    NextCheck = DateTime.Now.AddSeconds(5.0);
-                }
-            }
-        }
+        //public void CheckConnection()
+        //{
+        //    DateTime NextCheck = DateTime.Now.AddSeconds(5.0);
+        //    int LineNumber = Log.log("Checking Client connections..", Log.LogType.SYSTEM); ;
+        //    while (Running)
+        //    {
+        //        if (DateTime.Now >= NextCheck)
+        //        {
+        //            Log.log(LineNumber, "Checking Client connections..", Log.LogType.SYSTEM);
+        //            int ClientCount = 0;
+        //            int ClientDisconnectCount = 0;
+        //            foreach (Client client in Clients)
+        //            {
+        //                if (client.Socket != null)
+        //                {
+        //                    ++ClientCount;
+        //                    if (!client.IsConnected)
+        //                    {
+        //                        ++ClientDisconnectCount;
+        //                    }
+        //                    Log.log(LineNumber, "Checking Client connections.. Found " + ClientDisconnectCount.ToString() + "/" + ClientCount.ToString() + " disconnected clients.", Log.LogType.SYSTEM);
+        //                }
+        //            }
+        //            NextCheck = DateTime.Now.AddSeconds(5.0);
+        //        }
+        //    }
+        //}
     }
 }
