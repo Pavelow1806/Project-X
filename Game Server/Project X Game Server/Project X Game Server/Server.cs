@@ -71,7 +71,16 @@ namespace Project_X_Game_Server
             Log.log("Starting world update thread..", Log.LogType.CACHE);
             while (Connected)
             {
-                
+                foreach (BufferReturn item in Enum.GetValues(typeof(BufferReturn)))
+                {
+                    for (int i = 0; i < Network.instance.Clients.Length; i++)
+                    {
+                        if (Network.instance.Clients[i].InGame())
+                        {
+                            SendData.SendUDP_WorldUpdate(i, item);
+                        }
+                    }
+                }
             }
             WorldThread.Join();
         }

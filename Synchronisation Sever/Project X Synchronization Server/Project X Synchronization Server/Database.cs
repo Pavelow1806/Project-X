@@ -196,7 +196,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Accounts.Add(new _Accounts(reader.GetInt32("Account_ID"), reader.GetString("Username"), reader.GetString("Email"), reader.GetString("Password"), reader.GetBoolean("Logged_In")));
+                    Data.tbl_Accounts.Add(reader.GetInt32("Account_ID"), new _Accounts(reader.GetInt32("Account_ID"), reader.GetString("Username"), reader.GetString("Email"), reader.GetString("Password"), reader.GetBoolean("Logged_In")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -219,7 +219,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Activity.Add(new _Activity(reader.GetInt32("Activity_ID"), reader.GetInt32("Account_ID"), (Activity)reader.GetInt32("Activity_Type"), reader.GetDateTime("DTStamp"), reader.GetString("Session_ID"), false));
+                    Data.tbl_Activity.Add(reader.GetInt32("Activity_ID"), new _Activity(reader.GetInt32("Activity_ID"), reader.GetInt32("Account_ID"), (Activity)reader.GetInt32("Activity_Type"), reader.GetDateTime("DTStamp"), reader.GetString("Session_ID"), false));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -242,8 +242,8 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Characters.Add(new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"),
-                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z")));
+                    Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"),
+                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {

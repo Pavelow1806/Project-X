@@ -95,6 +95,22 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        private float _r = 0.0f;
+        public float r
+        {
+            get
+            {
+                return _r;
+            }
+            set
+            {
+                if (value != _r)
+                {
+                    Changed = true;
+                    _r = value;
+                }
+            }
+        }
 
         public AnimationState AnimState = new AnimationState();
 

@@ -30,9 +30,9 @@ namespace Project_X_Synchronization_Server
         AuthenticateGameServer,
         WorldRequest
     }
-    class SendData : Data
+    class SendData
     {
-        private static void sendData(ConnectionType destination, string PacketName)
+        private static void sendData(ConnectionType destination, string PacketName, byte[] data)
         {
             try
             {
@@ -59,9 +59,8 @@ namespace Project_X_Synchronization_Server
 
         }
 
-        private static void BuildBasePacket(int packetNumber)
+        private static void BuildBasePacket(int packetNumber, ref ByteBuffer.ByteBuffer buffer)
         {
-            Reset();
             buffer.WriteInteger((int)ConnectionType.SYNCSERVER);
             buffer.WriteInteger(packetNumber);
         }
@@ -72,10 +71,10 @@ namespace Project_X_Synchronization_Server
             {
                 try
                 {
-                    BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer);
+                    ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                    BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer, ref buffer);
                     buffer.WriteString(Network.instance.AuthenticationCode);
-                    data = buffer.ToArray();
-                    sendData(connection.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
+                    sendData(connection.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString(), buffer.ToArray());
                 }
                 catch (Exception e)
                 {
@@ -95,25 +94,25 @@ namespace Project_X_Synchronization_Server
         {
             try
             {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 Log.log("Sending world request response.", Log.LogType.SENT);
-                BuildBasePacket((int)GameServerSendPacketNumbers.WorldRequest);
+                BuildBasePacket((int)GameServerSendPacketNumbers.WorldRequest, ref buffer);
                 // tbl_Characters
                 int LineNumber = Log.log("Sending tbl_Characters..", Log.LogType.SENT);
 
-                buffer.WriteInteger(tbl_Characters.Count);
-                foreach (_Characters character in tbl_Characters)
+                buffer.WriteInteger(Data.tbl_Characters.Count);
+                foreach (KeyValuePair<int, _Characters> character in Data.tbl_Characters)
                 {
-                    buffer.WriteInteger(character.Character_ID);
-                    buffer.WriteString(character.Character_Name);
-                    buffer.WriteInteger(character.Character_Level);
-                    buffer.WriteFloat(character.Pos_X);
-                    buffer.WriteFloat(character.Pos_Y);
-                    buffer.WriteFloat(character.Pos_Z);
-                    Log.log(LineNumber, "Sending tbl_Characters.. Character ID " + character.Character_ID.ToString() + "/" + tbl_Characters.Count.ToString(), Log.LogType.SENT);
+                    buffer.WriteInteger(character.Key);
+                    buffer.WriteString(character.Value.Character_Name);
+                    buffer.WriteInteger(character.Value.Character_Level);
+                    buffer.WriteFloat(character.Value.Pos_X);
+                    buffer.WriteFloat(character.Value.Pos_Y);
+                    buffer.WriteFloat(character.Value.Pos_Z);
+                    Log.log(LineNumber, "Sending tbl_Characters.. Character ID " + character.Key.ToString() + "/" + Data.tbl_Characters.Count.ToString(), Log.LogType.SENT);
                 }
-
-                data = buffer.ToArray();
-                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString());
+                
+                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());
 
                 // 
             }

@@ -12,28 +12,15 @@ namespace Project_X_Synchronization_Server
     }
     class Data
     {
-        #region Data Send/Receive Information
-        protected static ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-        public static byte[] data = null;
-        protected static int Index = -1;
-        #endregion
-
-        public static void Reset()
-        {
-            buffer = new ByteBuffer.ByteBuffer();
-            data = null;
-            Index = -1;
-        }
-
         #region Table Storage
         // Accounts table
-        public static List<_Accounts> tbl_Accounts = new List<_Accounts>();
+        public static Dictionary<int, _Accounts> tbl_Accounts = new Dictionary<int, _Accounts>();
 
         //Activity table
-        public static List<_Activity> tbl_Activity = new List<_Activity>();
+        public static Dictionary<int, _Activity> tbl_Activity = new Dictionary<int, _Activity>();
 
         // Characters table
-        public static List<_Characters> tbl_Characters = new List<_Characters>();
+        public static Dictionary<int, _Characters> tbl_Characters = new Dictionary<int, _Characters>();
         #endregion
 
         private static List<string> UpdateQueries;
@@ -64,12 +51,12 @@ namespace Project_X_Synchronization_Server
             UpdateQueries = new List<string>();
             int NumberQueries = 0;
             int SubLineNumber = -1;
-            foreach (_Accounts account in tbl_Accounts)
+            foreach (KeyValuePair<int, _Accounts> account in tbl_Accounts)
             {
-                if (account.SQL != "")
+                if (account.Value.SQL != "")
                 {
-                    UpdateQueries.Add(account.SQL);
-                    account.SQL = "";
+                    UpdateQueries.Add(account.Value.SQL);
+                    account.Value.SQL = "";
                     ++NumberQueries;
                     if (SubLineNumber == -1)
                     {
@@ -81,12 +68,12 @@ namespace Project_X_Synchronization_Server
                     }
                 }
             }
-            foreach (_Activity activity in tbl_Activity)
+            foreach (KeyValuePair<int, _Activity> activity in tbl_Activity)
             {
-                if (activity.SQL != "")
+                if (activity.Value.SQL != "")
                 {
-                    UpdateQueries.Add(activity.SQL);
-                    activity.SQL = "";
+                    UpdateQueries.Add(activity.Value.SQL);
+                    activity.Value.SQL = "";
                     ++NumberQueries;
                     if (SubLineNumber == -1)
                     {
@@ -98,12 +85,12 @@ namespace Project_X_Synchronization_Server
                     }
                 }
             }
-            foreach (_Characters character in tbl_Characters)
+            foreach (KeyValuePair<int, _Characters> character in tbl_Characters)
             {
-                if (character.SQL != "")
+                if (character.Value.SQL != "")
                 {
-                    UpdateQueries.Add(character.SQL);
-                    character.SQL = "";
+                    UpdateQueries.Add(character.Value.SQL);
+                    character.Value.SQL = "";
                     ++NumberQueries;
                     if (SubLineNumber == -1)
                     {
@@ -412,9 +399,26 @@ namespace Project_X_Synchronization_Server
                 }
             }
         }
+        private float rotation_Y = 0.0f;
+        public float Rotation_Y
+        {
+            get
+            {
+                return rotation_Y;
+            }
+            set
+            {
+                if (rotation_Y != value)
+                {
+                    Changed = true;
+                    rotation_Y = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
         public bool In_World = false;
 
-        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, float Pos_X, float Pos_Y, float Pos_Z)
+        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y)
         {
             character_ID = Character_ID;
             account_ID = Account_ID;
@@ -423,13 +427,15 @@ namespace Project_X_Synchronization_Server
             pos_X = Pos_X;
             pos_Y = Pos_Y;
             pos_Z = Pos_Z;
+            rotation_Y = Rotation_Y;
             New = false;
         }
         private string CreateSQL()
         {
             if (Changed)
             {
-                return "UPDATE tbl_Characters SET Character_Level = " + character_Level.ToString() + ", Pos_X = " + pos_X.ToString() + ", Pos_Y = " + pos_Y.ToString() + ", Pos_Z = " + pos_Z.ToString() +
+                return "UPDATE tbl_Characters SET Character_Level = " + character_Level.ToString() + 
+                    ", Pos_X = " + pos_X.ToString() + ", Pos_Y = " + pos_Y.ToString() + ", Pos_Z = " + pos_Z.ToString() + ", Rotation_Y = " + rotation_Y.ToString() +
                     " WHERE Account_ID = " + account_ID.ToString() + " AND Character_Name = '" + character_Name + "';";
             }
             else

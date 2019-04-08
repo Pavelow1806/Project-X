@@ -100,5 +100,11 @@ namespace Project_X_Game_Server
                 quest.Changed = status;
             }
         }
+        public byte[] GetBuffer()
+        {
+            byte[] result;
+            BuildTransmission(out result);
+            return result;
+        }
     }
 }

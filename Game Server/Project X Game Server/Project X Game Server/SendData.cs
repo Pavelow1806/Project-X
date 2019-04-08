@@ -12,10 +12,8 @@ namespace Project_X_Game_Server
     public enum ClientSendPacketNumbers
     {
         Invalid,
-        LoginResponse,
-        RegistrationResponse,
-        CharacterList,
-        WorldPacket
+        WorldPacket,
+        CharacterDetails
     }
     public enum ServerSendPacketNumbers
     {
@@ -32,22 +30,31 @@ namespace Project_X_Game_Server
     {
         Invalid,
         AuthenticateSyncServer,
-        WorldRequest
+        WorldRequest,
+        UpdatePlayerData
     }
-    class SendData : Data
+    class SendData
     {
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
+
+        int LineNumber = 0;
+
         public static bool PostUDPMessages = true;
 
-        private static void sendData(ConnectionType destination, string PacketName)
+        private static void sendData(ConnectionType destination, string PacketName, int index, byte[] data)
         {
             try
             {
                 switch (destination)
                 {
                     case ConnectionType.CLIENT:
-                        Network.instance.Clients[Index].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString(), Log.LogType.SENT);
+                        Network.instance.Clients[index].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.LOGINSERVER:
+                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString(), Log.LogType.SENT);
                         Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.SYNCSERVER:
@@ -56,7 +63,6 @@ namespace Project_X_Game_Server
                     default:
                         break;
                 }
-                Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString(), Log.LogType.SENT);
             }
             catch (Exception e)
             {
@@ -67,9 +73,8 @@ namespace Project_X_Game_Server
             }
         }
 
-        private static void BuildBasePacket(int packetNumber)
+        private static void BuildBasePacket(int packetNumber, ref ByteBuffer.ByteBuffer buffer)
         {
-            Reset();
             buffer.WriteInteger((int)ConnectionType.GAMESERVER);
             buffer.WriteInteger(packetNumber);
         }
@@ -80,10 +85,10 @@ namespace Project_X_Game_Server
             {
                 try
                 {
-                    BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer);
+                    ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                    BuildBasePacket((int)ServerSendPacketNumbers.AuthenticateGameServer, ref buffer);
                     buffer.WriteString(Network.instance.AuthenticationCode);
-                    data = buffer.ToArray();
-                    sendData(server.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString());
+                    sendData(server.Type, ServerSendPacketNumbers.AuthenticateGameServer.ToString(), -1, buffer.ToArray());
                 }
                 catch (Exception e)
                 {
@@ -103,11 +108,11 @@ namespace Project_X_Game_Server
         {
             try
             {
-                BuildBasePacket((int)LoginServerSendPacketNumbers.ConfirmWhiteList);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)LoginServerSendPacketNumbers.ConfirmWhiteList, ref buffer);
                 buffer.WriteString(ip);
-                data = buffer.ToArray();
                 Log.log("Sent white list confirmation of IP: " + ip, Log.LogType.SENT);
-                sendData(ConnectionType.LOGINSERVER, LoginServerSendPacketNumbers.ConfirmWhiteList.ToString());
+                sendData(ConnectionType.LOGINSERVER, LoginServerSendPacketNumbers.ConfirmWhiteList.ToString(), -1, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -122,10 +127,10 @@ namespace Project_X_Game_Server
         {
             try
             {
-                BuildBasePacket((int)SyncServerSendPacketNumbers.WorldRequest);
-                data = buffer.ToArray();
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)SyncServerSendPacketNumbers.WorldRequest, ref buffer);
                 Log.log(LineNumber, "Requesting world status update from synchronization server..", Log.LogType.SENT);
-                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.WorldRequest.ToString());
+                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.WorldRequest.ToString(), -1, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -133,16 +138,38 @@ namespace Project_X_Game_Server
                 return;
             }
         }
+        public static void UpdatePlayerData(Player player)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)SyncServerSendPacketNumbers.UpdatePlayerData, ref buffer);
+                // ID
+                buffer.WriteInteger(player.Character_ID);
+                // Position
+                buffer.WriteFloat(player.x);
+                buffer.WriteFloat(player.y);
+                buffer.WriteFloat(player.z);
+                buffer.WriteFloat(player.r);
+
+                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.UpdatePlayerData.ToString(), -1, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Update Player Data packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
         #endregion
 
         #region Client Communication
-        public static void SendUDPPacket(Connection connection, byte[] data)
+        public static void SendUDP_Packet(Connection connection, byte[] data)
         {
             try
             {
                 Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                 IPAddress Receiver = IPAddress.Parse(connection.IP.Substring(connection.IP.IndexOf(':')));
-                IPEndPoint EndPoint = new IPEndPoint(Receiver, 5601);
+                IPEndPoint EndPoint = new IPEndPoint(Receiver, Network.UDPPort);
                 socket.SendTo(data, EndPoint);
                 if (PostUDPMessages) Log.log("UDP Packet sent to IP: " + connection.IP.Substring(connection.IP.IndexOf(':')).ToString() + " Length: " + data.Length.ToString(), Log.LogType.SENT);
             }
@@ -155,17 +182,67 @@ namespace Project_X_Game_Server
         {
             try
             {
-                BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket);
-                Index = index;
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
                 //TBC
-                data = buffer.ToArray();
                 Log.log("Sending initial world packet to client..", Log.LogType.SENT);
-                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString());
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             }
             catch (Exception e)
             {
                 Log.log("Building initial world packet failed. > " + e.Message, Log.LogType.ERROR);
                 return;
+            }
+        }
+        public static void CharacterDetails(int index, Player Character)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.CharacterDetails, ref buffer);
+                buffer.WriteString(Character.Name);
+                buffer.WriteInteger(Character.Level);
+                buffer.WriteFloat(Character.x);
+                buffer.WriteFloat(Character.y);
+                buffer.WriteFloat(Character.z);
+                buffer.WriteFloat(Character.r);
+                buffer.WriteInteger(Character.Character_ID);
+                //buffer.WriteInteger(Character.quests.Count);
+                //foreach (Quest quest in Character.quests)
+                //{
+                //    buffer.WriteInteger(quest.ID);
+                //    buffer.WriteString(quest.Title);
+                //    buffer.WriteString(quest.StartText);
+                //    buffer.WriteString(quest.EndText);
+                //    buffer.WriteInteger(quest.Reward);
+                //    buffer.WriteInteger(quest.NPCStartID);
+                //    buffer.WriteInteger(quest.NPCEndID);
+                //    buffer.WriteInteger(quest.ObjectiveTarget);
+                //    buffer.WriteInteger(quest.StartRequirementQuestID);
+                //    buffer.WriteByte((quest.Complete) ? (byte)1 : (byte)0);
+                //    buffer.WriteByte((quest.TurnedIn) ? (byte)1 : (byte)0);
+                //    buffer.WriteByte((quest.Active) ? (byte)1 : (byte)0);
+                //    buffer.WriteInteger(quest.ObjectiveProgress);
+                //}
+                Log.log("Sending Character Data packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.CharacterDetails.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Send Character Data packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+                throw;
+            }
+        }
+        public static void SendUDP_WorldUpdate(int index, BufferReturn request)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteInteger((int)request);
+            byte[] data = World.instance.PullBuffer(request);
+            if (data != null)
+            {
+                buffer.WriteBytes(data);
+                SendUDP_Packet(Network.instance.Clients[index], buffer.ToArray());
             }
         }
         #endregion

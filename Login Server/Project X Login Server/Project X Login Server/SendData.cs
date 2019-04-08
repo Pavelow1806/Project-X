@@ -26,9 +26,9 @@ namespace Project_X_Login_Server
         AuthenticateServer,
         RegistrationNotification
     }
-    class SendData : Data
+    class SendData
     {
-        private static void sendData(ConnectionType destination, int PacketNumber)
+        private static void sendData(ConnectionType destination, int PacketNumber, int index, byte[] data)
         {
             try
             {
@@ -39,11 +39,11 @@ namespace Project_X_Login_Server
                         Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((GameServerSendPacketNumbers)PacketNumber).ToString() + "] to Game Server.", Log.LogType.SENT);
                         break;
                     case ConnectionType.CLIENT:
-                        Network.instance.Clients[Index].Stream.BeginWrite(data, 0, data.Length, null, null);
-                        Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((ClientSendPacketNumbers)PacketNumber).ToString() + "] to Client Index " + Index.ToString() + ".", Log.LogType.SENT);
+                        Network.instance.Clients[index].Stream.BeginWrite(data, 0, data.ToArray().Length, null, null);
+                        Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((ClientSendPacketNumbers)PacketNumber).ToString() + "] to Client Index " + index.ToString() + ".", Log.LogType.SENT);
                         break;
                     case ConnectionType.SYNCSERVER:
-                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
+                        Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.ToArray().Length, null, null);
                         Log.log("Packet Sent     [#" + PacketNumber.ToString("000") + " " + ((SyncServerSendPacketNumbers)PacketNumber).ToString() + "] to Synchronization Server.", Log.LogType.SENT);
                         break;
                     default:
@@ -58,9 +58,8 @@ namespace Project_X_Login_Server
                 Log.log("     Error Message > " + e.Message, Log.LogType.ERROR);
             }
         }
-        private static void BuildBasePacket(int packetNumber)
+        private static void BuildBasePacket(int packetNumber, ref ByteBuffer.ByteBuffer buffer)
         {
-            Reset(true);
             buffer.WriteInteger((int)ConnectionType.LOGINSERVER);
             buffer.WriteInteger(packetNumber);
         }
@@ -70,11 +69,10 @@ namespace Project_X_Login_Server
         {
             try
             {
-                Index = index;
-                BuildBasePacket((int)ClientSendPacketNumbers.LoginResponse);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.LoginResponse, ref buffer);
                 buffer.WriteByte(response);
-                data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.LoginResponse);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.LoginResponse, index, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -86,11 +84,10 @@ namespace Project_X_Login_Server
         {
             try
             {
-                Index = index;
-                BuildBasePacket((int)ClientSendPacketNumbers.ConfirmWhiteList);
-
-                data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.ConfirmWhiteList);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.ConfirmWhiteList, ref buffer);
+                
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.ConfirmWhiteList, index, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -102,12 +99,11 @@ namespace Project_X_Login_Server
         {
             try
             {
-                Index = index;
-                BuildBasePacket((int)ClientSendPacketNumbers.RegistrationResponse);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.RegistrationResponse, ref buffer);
                 buffer.WriteByte(success);
                 buffer.WriteString(response);
-                data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.RegistrationResponse);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.RegistrationResponse, index, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -119,20 +115,19 @@ namespace Project_X_Login_Server
         {
             try
             {
-                Index = index;
-                BuildBasePacket((int)ClientSendPacketNumbers.CharacterList);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.CharacterList, ref buffer);
                 buffer.WriteByte((success) ? (byte)1 : (byte)0);
-                buffer.WriteInteger(Network.instance.Clients[Index].Characters.Count);
+                buffer.WriteInteger(Network.instance.Clients[index].Characters.Count);
                 if (success)
                 {
-                    foreach (Character c in Network.instance.Clients[Index].Characters)
+                    foreach (Character c in Network.instance.Clients[index].Characters)
                     {
                         buffer.WriteString(c.Name);
                         buffer.WriteInteger(c.Level);
                     }
                 }
-                data = buffer.ToArray();
-                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.CharacterList);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.CharacterList, index, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -147,10 +142,11 @@ namespace Project_X_Login_Server
         {
             try
             {
-                BuildBasePacket((int)GameServerSendPacketNumbers.WhiteList);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)GameServerSendPacketNumbers.WhiteList, ref buffer);
                 buffer.WriteString(ip);
-                data = buffer.ToArray();
-                sendData(ConnectionType.GAMESERVER, (int)GameServerSendPacketNumbers.WhiteList);
+
+                sendData(ConnectionType.GAMESERVER, (int)GameServerSendPacketNumbers.WhiteList, -1, buffer.ToArray());
             }
             catch (Exception e)
             {
@@ -165,13 +161,13 @@ namespace Project_X_Login_Server
         {
             try
             {
-                BuildBasePacket((int)SyncServerSendPacketNumbers.RegistrationNotification);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)SyncServerSendPacketNumbers.RegistrationNotification, ref buffer);
                 buffer.WriteInteger(account_id);
                 buffer.WriteString(username);
                 buffer.WriteString(password);
                 buffer.WriteString(email);
-                data = buffer.ToArray();
-                sendData(ConnectionType.SYNCSERVER, (int)SyncServerSendPacketNumbers.RegistrationNotification);
+                sendData(ConnectionType.SYNCSERVER, (int)SyncServerSendPacketNumbers.RegistrationNotification, -1, buffer.ToArray());
             }
             catch (Exception e)
             {

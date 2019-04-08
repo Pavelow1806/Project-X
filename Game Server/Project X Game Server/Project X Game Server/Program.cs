@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.IO;
 
 namespace Project_X_Game_Server
 {
@@ -45,7 +46,22 @@ namespace Project_X_Game_Server
             consoleThread = new Thread(new ThreadStart(ConsoleLoop));
             consoleThread.Start();
         }
+        private static string bytetobinary(byte tobeconverted)
+        {
+            string result = string.Empty;
 
+            int counter = sizeof(byte) * 8;
+            int mask = 1;
+
+            while (counter-- > 0)
+            {
+                char c = (tobeconverted & mask) == mask ? '1' : '0';
+                result = c + result;
+                tobeconverted >>= 1;
+            }
+
+            return result;
+        }
         private static void ConsoleLoop()
         {
             string line;
