@@ -155,7 +155,11 @@ namespace Project_X_Game_Server
             for (int i = 0; i < Character_Count; i++)
             {
                 int Character_ID = buffer.ReadInteger();
-                World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat()));
+                World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat()));
+                World.instance.players[Character_ID].Camera_Pos_X = buffer.ReadFloat();
+                World.instance.players[Character_ID].Camera_Pos_Y = buffer.ReadFloat();
+                World.instance.players[Character_ID].Camera_Pos_Z = buffer.ReadFloat();
+                World.instance.players[Character_ID].Camera_Rotation_Y = buffer.ReadFloat();
                 Log.log(LineNumber, "Processing world request packet.. Added character " + i.ToString() + "/" + Character_Count.ToString(), Log.LogType.RECEIVED);
             }
             Log.log(LineNumber, "Processing world request packet.. Added characters (" + Character_Count.ToString() + ")", Log.LogType.SUCCESS);
@@ -187,6 +191,11 @@ namespace Project_X_Game_Server
             float Y = buffer.ReadFloat();
             float Z = buffer.ReadFloat();
             float R = buffer.ReadFloat();
+            // Camera Position
+            float cX = buffer.ReadFloat();
+            float cY = buffer.ReadFloat();
+            float cZ = buffer.ReadFloat();
+            float cR = buffer.ReadFloat();
             // Animation State
             float Forward = buffer.ReadFloat();
             float Turn = buffer.ReadFloat();
@@ -208,6 +217,10 @@ namespace Project_X_Game_Server
             World.instance.players[Character_ID].y = Y;
             World.instance.players[Character_ID].z = Z;
             World.instance.players[Character_ID].r = R;
+            World.instance.players[Character_ID].Camera_Pos_X = cX;
+            World.instance.players[Character_ID].Camera_Pos_Y = cY;
+            World.instance.players[Character_ID].Camera_Pos_Z = cZ;
+            World.instance.players[Character_ID].Camera_Rotation_Y = cR;
 
             World.instance.players[Character_ID].AnimState.Forward = Forward;
             World.instance.players[Character_ID].AnimState.Turn = Turn;
@@ -222,11 +235,15 @@ namespace Project_X_Game_Server
 
             if (LineNumber == 0)
             {
-                LineNumber = Log.log("Received update from player: " + Character_ID.ToString() + " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString());
+                LineNumber = Log.log("Received update from player: " + Character_ID.ToString() + 
+                    " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() + 
+                    " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
             }
             else
             {
-                Log.log(LineNumber, "Received update from player: " + Character_ID.ToString() + " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString());
+                Log.log(LineNumber, "Received update from player: " + Character_ID.ToString() +
+                    " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
+                    " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
             }
 
             SendData.UpdatePlayerData(World.instance.players[Character_ID]);

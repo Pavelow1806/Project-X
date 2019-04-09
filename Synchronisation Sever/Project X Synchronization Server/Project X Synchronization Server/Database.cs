@@ -243,7 +243,8 @@ namespace Project_X_Synchronization_Server
                 while (reader.Read())
                 {
                     Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"),
-                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y")));
+                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
+                        reader.GetFloat("Camera_Pos_X"), reader.GetFloat("Camera_Pos_Y"), reader.GetFloat("Camera_Pos_Z"), reader.GetFloat("Camera_Rotation_Y")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {

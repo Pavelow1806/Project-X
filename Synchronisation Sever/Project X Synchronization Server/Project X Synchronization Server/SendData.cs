@@ -109,6 +109,12 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteFloat(character.Value.Pos_X);
                     buffer.WriteFloat(character.Value.Pos_Y);
                     buffer.WriteFloat(character.Value.Pos_Z);
+                    buffer.WriteFloat(character.Value.Rotation_Y);
+                    // Camera
+                    buffer.WriteFloat(character.Value.Camera_Pos_X);
+                    buffer.WriteFloat(character.Value.Camera_Pos_Y);
+                    buffer.WriteFloat(character.Value.Camera_Pos_Z);
+                    buffer.WriteFloat(character.Value.Camera_Rotation_Y);
                     Log.log(LineNumber, "Sending tbl_Characters.. Character ID " + character.Key.ToString() + "/" + Data.tbl_Characters.Count.ToString(), Log.LogType.SENT);
                 }
                 

@@ -118,7 +118,7 @@ namespace Project_X_Game_Server
 
         protected ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
 
-        public Entity(int ID, string name, int level, float x, float y, float z)
+        public Entity(int ID, string name, int level, float x, float y, float z, float r)
         {
             Entity_ID = World.instance.EntityCounter;
             _Name = name;
@@ -126,6 +126,7 @@ namespace Project_X_Game_Server
             _x = x;
             _y = y;
             _z = z;
+            _r = r;
         }
 
         protected virtual void BuildTransmission(out byte[] data)
@@ -138,6 +139,7 @@ namespace Project_X_Game_Server
             buffer.WriteFloat(_x);
             buffer.WriteFloat(_y);
             buffer.WriteFloat(_z);
+            buffer.WriteFloat(_r);
             buffer.WriteByte((byte)((AnimState.Attacking) ? 1 : 0));
             buffer.WriteByte((byte)((AnimState.Attacked) ? 1 : 0));
             buffer.WriteByte((byte)((AnimState.Dead) ? 1 : 0));

@@ -12,6 +12,71 @@ namespace Project_X_Game_Server
 
         public List<Quest> quests = new List<Quest>();
 
+        private float camera_Pos_X = 0.0f;
+        public float Camera_Pos_X
+        {
+            get
+            {
+                return camera_Pos_X;
+            }
+            set
+            {
+                if (camera_Pos_X != value)
+                {
+                    Changed = true;
+                    camera_Pos_X = value;
+                }
+            }
+        }
+        private float camera_Pos_Y = 0.0f;
+        public float Camera_Pos_Y
+        {
+            get
+            {
+                return camera_Pos_Y;
+            }
+            set
+            {
+                if (camera_Pos_Y != value)
+                {
+                    Changed = true;
+                    camera_Pos_Y = value;
+                }
+            }
+        }
+        private float camera_Pos_Z = 0.0f;
+        public float Camera_Pos_Z
+        {
+            get
+            {
+                return camera_Pos_Z;
+            }
+            set
+            {
+                if (camera_Pos_Z != value)
+                {
+                    Changed = true;
+                    camera_Pos_Z = value;
+                }
+            }
+        }
+        private float camera_Rotation_Y = 0.0f;
+        public float Camera_Rotation_Y
+        {
+            get
+            {
+                return camera_Rotation_Y;
+            }
+            set
+            {
+                if (camera_Rotation_Y != value)
+                {
+                    Changed = true;
+                    camera_Rotation_Y = value;
+                }
+            }
+        }
+
         private int _TargetID = -1;
         public int TargetID
         {
@@ -46,8 +111,8 @@ namespace Project_X_Game_Server
             }
         }
 
-        public Player(int _Character_ID, string _Name, int _Level, float _x, float _y, float _z) :
-            base (_Character_ID, _Name, _Level, _x, _y, _z)
+        public Player(int _Character_ID, string _Name, int _Level, float _x, float _y, float _z, float _r) :
+            base (_Character_ID, _Name, _Level, _x, _y, _z, _r)
         {
             Character_ID = _Character_ID;
         }
@@ -57,6 +122,11 @@ namespace Project_X_Game_Server
             if (Changed || AnimState.Changed || QuestChanged())
             {
                 base.BuildTransmission(out result);
+
+                buffer.WriteFloat(camera_Pos_X);
+                buffer.WriteFloat(camera_Pos_Y);
+                buffer.WriteFloat(camera_Pos_Z);
+                buffer.WriteFloat(camera_Rotation_Y);
 
                 buffer.WriteInteger(CountQuests());
                 foreach (Quest quest in quests)

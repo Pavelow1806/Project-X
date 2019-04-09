@@ -11,7 +11,7 @@ namespace Project_X_Game_Server
         public List<Quest> quests = new List<Quest>();
 
         public NPC(int ID) :
-            base (ID, "", 0,0,0,0)
+            base (ID, "", 0,0,0,0,0)
         {
             type = EntityType.NPC;
         }

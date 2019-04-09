@@ -416,9 +416,80 @@ namespace Project_X_Synchronization_Server
                 }
             }
         }
+        private float camera_Pos_X = 0.0f;
+        public float Camera_Pos_X
+        {
+            get
+            {
+                return camera_Pos_X;
+            }
+            set
+            {
+                if (camera_Pos_X != value)
+                {
+                    Changed = true;
+                    camera_Pos_X = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float camera_Pos_Y = 0.0f;
+        public float Camera_Pos_Y
+        {
+            get
+            {
+                return camera_Pos_Y;
+            }
+            set
+            {
+                if (camera_Pos_Y != value)
+                {
+                    Changed = true;
+                    camera_Pos_Y = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float camera_Pos_Z = 0.0f;
+        public float Camera_Pos_Z
+        {
+            get
+            {
+                return camera_Pos_Z;
+            }
+            set
+            {
+                if (camera_Pos_Z != value)
+                {
+                    Changed = true;
+                    camera_Pos_Z = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float camera_Rotation_Y = 0.0f;
+        public float Camera_Rotation_Y
+        {
+            get
+            {
+                return camera_Rotation_Y;
+            }
+            set
+            {
+                if (camera_Rotation_Y != value)
+                {
+                    Changed = true;
+                    camera_Rotation_Y = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+
         public bool In_World = false;
 
-        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y)
+        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, 
+            float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, 
+            float Camera_Pos_X, float Camera_Pos_Y, float Camera_Pos_Z, float Camera_Rotation_Y)
         {
             character_ID = Character_ID;
             account_ID = Account_ID;
@@ -428,6 +499,10 @@ namespace Project_X_Synchronization_Server
             pos_Y = Pos_Y;
             pos_Z = Pos_Z;
             rotation_Y = Rotation_Y;
+            camera_Pos_X = Camera_Pos_X;
+            camera_Pos_Y = Camera_Pos_Y;
+            camera_Pos_Z = Camera_Pos_Z;
+            camera_Rotation_Y = Camera_Rotation_Y;
             New = false;
         }
         private string CreateSQL()
@@ -436,6 +511,7 @@ namespace Project_X_Synchronization_Server
             {
                 return "UPDATE tbl_Characters SET Character_Level = " + character_Level.ToString() + 
                     ", Pos_X = " + pos_X.ToString() + ", Pos_Y = " + pos_Y.ToString() + ", Pos_Z = " + pos_Z.ToString() + ", Rotation_Y = " + rotation_Y.ToString() +
+                    ", Camera_Pos_X = " + camera_Pos_X.ToString() + ", Camera_Pos_Y = " + camera_Pos_Y.ToString() + ", Camera_Pos_Z = " + camera_Pos_Z.ToString() + ", Camera_Rotation_Y = " + camera_Rotation_Y.ToString() +
                     " WHERE Account_ID = " + account_ID.ToString() + " AND Character_Name = '" + character_Name + "';";
             }
             else

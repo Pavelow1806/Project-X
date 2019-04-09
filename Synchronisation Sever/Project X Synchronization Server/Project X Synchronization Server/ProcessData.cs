@@ -115,10 +115,21 @@ namespace Project_X_Synchronization_Server
             float y = buffer.ReadFloat();
             float z = buffer.ReadFloat();
             float r = buffer.ReadFloat();
+            // Camera Position
+            float cx = buffer.ReadFloat();
+            float cy = buffer.ReadFloat();
+            float cz = buffer.ReadFloat();
+            float cr = buffer.ReadFloat();
+            // Player
             Data.tbl_Characters[Character_ID].Pos_X = x;
             Data.tbl_Characters[Character_ID].Pos_Y = y;
             Data.tbl_Characters[Character_ID].Pos_Z = z;
             Data.tbl_Characters[Character_ID].Rotation_Y = r;
+            // Camera
+            Data.tbl_Characters[Character_ID].Camera_Pos_X = cx;
+            Data.tbl_Characters[Character_ID].Camera_Pos_Y = cy;
+            Data.tbl_Characters[Character_ID].Camera_Pos_Z = cz;
+            Data.tbl_Characters[Character_ID].Camera_Rotation_Y = cr;
         }
         #endregion
 

@@ -151,6 +151,11 @@ namespace Project_X_Game_Server
                 buffer.WriteFloat(player.y);
                 buffer.WriteFloat(player.z);
                 buffer.WriteFloat(player.r);
+                // Camera Position
+                buffer.WriteFloat(player.Camera_Pos_X);
+                buffer.WriteFloat(player.Camera_Pos_Y);
+                buffer.WriteFloat(player.Camera_Pos_Z);
+                buffer.WriteFloat(player.Camera_Rotation_Y);
 
                 sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.UpdatePlayerData.ToString(), -1, buffer.ToArray());
             }
@@ -206,6 +211,11 @@ namespace Project_X_Game_Server
                 buffer.WriteFloat(Character.y);
                 buffer.WriteFloat(Character.z);
                 buffer.WriteFloat(Character.r);
+                // Camera Position
+                buffer.WriteFloat(Character.Camera_Pos_X);
+                buffer.WriteFloat(Character.Camera_Pos_Y);
+                buffer.WriteFloat(Character.Camera_Pos_Z);
+                buffer.WriteFloat(Character.Camera_Rotation_Y);
                 buffer.WriteInteger(Character.Character_ID);
                 //buffer.WriteInteger(Character.quests.Count);
                 //foreach (Quest quest in Character.quests)
