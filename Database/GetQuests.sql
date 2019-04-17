@@ -1,0 +1,10 @@
+DROP PROCEDURE IF EXISTS GetQuests;
+DELIMITER //
+CREATE PROCEDURE GetQuests()
+BEGIN
+	SELECT * 
+    FROM tbl_Quests;
+END //
+DELIMITER ;
+
+CALL GetQuests();

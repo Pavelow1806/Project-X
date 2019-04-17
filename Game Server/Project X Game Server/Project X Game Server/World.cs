@@ -6,11 +6,6 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
-    public enum BufferReturn
-    {
-        Player,
-        NPC
-    }
     class World
     {
         public static World instance;
@@ -23,14 +18,14 @@ namespace Project_X_Game_Server
                 return ++entityCounter;
             }
         }
+        private ByteBuffer.ByteBuffer WorldBuffer = new ByteBuffer.ByteBuffer();
+
         public Dictionary<int, Player> players = new Dictionary<int, Player>();
-        private ByteBuffer.ByteBuffer playerBuffer = new ByteBuffer.ByteBuffer();
+        public List<Player> playersInWorld = new List<Player>();
 
         public Dictionary<int, NPC> NPCs = new Dictionary<int, NPC>();
-        private ByteBuffer.ByteBuffer npcBuffer = new ByteBuffer.ByteBuffer();
         
         public Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
-        private ByteBuffer.ByteBuffer questBuffer = new ByteBuffer.ByteBuffer();
 
         public World()
         {
@@ -66,43 +61,23 @@ namespace Project_X_Game_Server
             }
             return null;
         }
-        public byte[] PullBuffer(BufferReturn request)
+        public byte[] PullBuffer()
         {
-            switch (request)
+            WorldBuffer = new ByteBuffer.ByteBuffer();
+            // Players
+            WorldBuffer.WriteInteger(playersInWorld.Count);
+            for (int i = 0; i < playersInWorld.Count; i++)
             {
-                case BufferReturn.Player:
-                    playerBuffer = null;
-                    foreach (KeyValuePair<int, Player> player in players)
-                    {
-                        if (player.Value.InWorld)
-                        {
-                            playerBuffer.WriteBytes(player.Value.GetBuffer());
-                        }
-                    }
-                    if (playerBuffer != null)
-                    {
-                        return playerBuffer.ToArray();
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                case BufferReturn.NPC:
-                    npcBuffer = null;
-                    foreach (KeyValuePair<int, NPC> npc in NPCs)
-                    {
-                        npcBuffer.WriteBytes(npc.Value.GetBuffer());
-                    }
-                    if (npcBuffer != null)
-                    {
-                        return npcBuffer.ToArray();
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                default:
-                    return null;
+                WorldBuffer.WriteBytes(playersInWorld[i].GetBuffer());
+            }
+            // NPCs
+            if (WorldBuffer != null)
+            {
+                return WorldBuffer.ToArray();
+            }
+            else
+            {
+                return null;
             }
         }
     }

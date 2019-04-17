@@ -9,84 +9,132 @@ namespace Project_X_Game_Server
     class Quest
     {
         #region General
-        public int ID = -1;
-        public string Title = "";
-        public string StartText = "";
-        public string EndText = "";
-        public int Reward = -1;
-        public int NPCStartID = -1;
-        public int NPCEndID = -1;
-        public int ObjectiveTarget = -1;
-        public int StartRequirementQuestID = -1;
+        private int iD = -1;
+        public int ID
+        {
+            get
+            {
+                return iD;
+            }
+        }
+        private string title = "";
+        public string Title
+        {
+            get
+            {
+                return title;
+            }
+        }
+        private string start_Text = "";
+        public string Start_Text
+        {
+            get
+            {
+                return start_Text;
+            }
+        }
+        private string end_Text = "";
+        public string End_Text
+        {
+            get
+            {
+                return end_Text;
+            }
+        }
+        private int reward = -1;
+        public int Reward
+        {
+            get
+            {
+                return reward;
+            }
+        }
+        private int nPC_Start_ID = -1;
+        public int NPC_Start_ID
+        {
+            get
+            {
+                return nPC_Start_ID;
+            }
+        }
+        private int nPC_End_ID = -1;
+        public int NPC_End_ID
+        {
+            get
+            {
+                return nPC_End_ID;
+            }
+        }
+        private int objective_Target = -1;
+        public int Objective_Target
+        {
+            get
+            {
+                return objective_Target;
+            }
+        }
+        private int start_Requirement_Quest_ID = -1;
+        public int Start_Requirement_Quest_ID
+        {
+            get
+            {
+                return start_Requirement_Quest_ID;
+            }
+        }
         #endregion
 
+
+        protected bool Changed = false;
+
+        protected ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+
+        public Quest(int id, string Title, string Start_text, string End_text, int Reward, 
+            int Npc_start_id, int Npc_end_id, int Objective_target, int Start_requirement_quest_id,
+            int Item_objective_id, int Npc_objective_id)
+        {
+            iD = id;
+            title = title;
+
+        }
+    }
+    public enum QuestStatus
+    {
+        InProgress,
+        Complete,
+        Finished
+    }
+    class Quest_Log
+    {
         #region Progress
-        private bool _Complete = false;
-        public bool Complete
+        public int Quest_ID;
+        public QuestStatus Status;
+        public int ObjectiveProgress = 0;
+        #endregion
+
+        public Quest_Log(int Character_ID)
         {
-            get
-            {
-                return _Complete;
-            }
-            set
-            {
-                if (_Complete != value)
-                {
-                    Changed = true;
-                    _Complete = value;
-                }
-            }
+            Status = QuestStatus.InProgress;
         }
-        private bool _TurnedIn = false;
-        public bool TurnedIn
+
+        public void Increment(int Character_ID)
         {
-            get
+            if (ObjectiveProgress + 1 < World.instance.quests[Quest_ID].Objective_Target)
             {
-                return _TurnedIn;
+                ++ObjectiveProgress;
             }
-            set
+            else if (ObjectiveProgress + 1 >= World.instance.quests[Quest_ID].Objective_Target)
             {
-                if (_TurnedIn != value)
-                {
-                    Changed = true;
-                    _TurnedIn = value;
-                }
-            }
-        }
-        private bool _Active = false;
-        public bool Active
-        {
-            get
-            {
-                return _Active;
-            }
-            set
-            {
-                if (_Active != value)
-                {
-                    Changed = true;
-                    _Active = value;
-                }
-            }
-        }
-        private int _ObjectiveProgress = 0;
-        public int ObjectiveProgress
-        {
-            get
-            {
-                return _ObjectiveProgress;
-            }
-            set
-            {
-                if (_ObjectiveProgress != value)
-                {
-                    Changed = true;
-                    _ObjectiveProgress = value;
-                }
+                ++ObjectiveProgress;
+                Status = QuestStatus.Finished;
             }
         }
 
-        public bool Changed = false;
-        #endregion
+        public void TurnIn(int Character_ID)
+        {
+            if (ObjectiveProgress >= World.instance.quests[Quest_ID].Objective_Target)
+            {
+                Status = QuestStatus.Complete;
+            }
+        }
     }
 }

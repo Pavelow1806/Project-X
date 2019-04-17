@@ -24,7 +24,8 @@ namespace Project_X_Synchronization_Server
         Invalid,
         AuthenticateServer,
         WorldRequest,
-        UpdatePlayerData
+        UpdatePlayerData,
+        UpdateQuestLog
     }
     public enum SyncServerProcessPacketNumbers
     {
@@ -130,6 +131,26 @@ namespace Project_X_Synchronization_Server
             Data.tbl_Characters[Character_ID].Camera_Pos_Y = cy;
             Data.tbl_Characters[Character_ID].Camera_Pos_Z = cz;
             Data.tbl_Characters[Character_ID].Camera_Rotation_Y = cr;
+        }
+        private static void UpdateQuestLog(ConnectionType type, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Quest_ID = buffer.ReadInteger();
+            int Character_ID = buffer.ReadInteger();
+            int Objective_Progress = buffer.ReadInteger();
+            int Quest_Status = buffer.ReadInteger();
+            _Quest_Log ql = Data.ContainsKey(Character_ID, Quest_ID);
+            if (ql != null)
+            {
+                ql.Quest_Status = Quest_Status;
+                ql.Progress = Objective_Progress;
+            }
+            else
+            {
+                Data.tbl_Quest_Log.Add()
+            }
         }
         #endregion
 

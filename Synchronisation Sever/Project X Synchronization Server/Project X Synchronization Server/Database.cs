@@ -242,9 +242,10 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"),
+                    Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"), reader.GetInt32("Gender"),
                         reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
-                        reader.GetFloat("Camera_Pos_X"), reader.GetFloat("Camera_Pos_Y"), reader.GetFloat("Camera_Pos_Z"), reader.GetFloat("Camera_Rotation_Y")));
+                        reader.GetFloat("Camera_Pos_X"), reader.GetFloat("Camera_Pos_Y"), reader.GetFloat("Camera_Pos_Z"), reader.GetFloat("Camera_Rotation_Y"), 
+                        reader.GetInt32("Health"), reader.GetInt32("Strength"), reader.GetInt32("Agility")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -254,6 +255,103 @@ namespace Project_X_Synchronization_Server
                     else
                     {
                         Log.log(SubLineNumber, "Downloading data from tbl_Characters, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Quests
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Quests into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Quests;");
+                reader = QueryDatabase("SELECT * FROM tbl_Quests;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Quests.Add(reader.GetInt32("Quest_ID"), new _Quests(reader.GetInt32("Quest_ID"), reader.GetString("Title"), reader.GetString("Start_Text"), reader.GetString("End_Text"),
+                        reader.GetInt32("Reward_ID"), reader.GetInt32("NPC_Start_ID"), reader.GetInt32("NPC_End_ID"), reader.GetInt32("Objective_Target"), reader.GetInt32("Start_Requirement_Quest_ID"),
+                        reader.GetInt32("Item_Objective_ID"), reader.GetInt32("NPC_Objective_ID")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Quests, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Quests, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Quest_Log
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Quest_Log into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Quest_Log;");
+                reader = QueryDatabase("SELECT * FROM tbl_Quest_Log;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Quest_Log.Add(reader.GetInt32("Log_ID"), new _Quest_Log(reader.GetInt32("Log_ID"), reader.GetInt32("Character_ID"), 
+                        reader.GetInt32("Quest_ID"), reader.GetInt32("Quest_Status"), reader.GetInt32("Progress")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Quest_Log, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Quest_Log, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_NPC
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_NPC into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_NPC;");
+                reader = QueryDatabase("SELECT * FROM tbl_NPC;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_NPC.Add(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
+                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"), 
+                        reader.GetInt32("HP"), reader.GetInt32("Gender")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_NPC, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_NPC, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Collectables
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Collectables into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Collectables;");
+                reader = QueryDatabase("SELECT * FROM tbl_Collectables;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Collectables.Add(reader.GetInt32("Collectable_ID"), new _Collectables(reader.GetInt32("Collectable_ID"), reader.GetString("Collectable_Name")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Collectables, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Collectables, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
                             ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
                     }
                 }
@@ -274,6 +372,31 @@ namespace Project_X_Synchronization_Server
             List<string> Queries = Data.BuildQueryList(LineNumber);
             Log.log(LineNumber, "Starting synchronization of data.. Found " + Queries.Count.ToString() + " queries ready for updating.", Log.LogType.SYNC);
             return BulkUpdate(Queries, LineNumber);
+        }
+
+        public int Insert_Record(string query)
+        {
+            lock (lockObj)
+            {
+                reader = QueryDatabase(query);
+                if (reader != null)
+                {
+                    if (reader.Read())
+                    {
+                        int ID = Convert.ToInt32(reader[0]);
+                        reader.Close();
+                        return ID;
+                    }
+                    else
+                    {
+                        return -1;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+            }
         }
     }
 }

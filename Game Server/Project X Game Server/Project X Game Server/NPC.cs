@@ -6,13 +6,36 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
+    public enum NPCStatus
+    {
+        AGGRESSIVE,
+        NEUTRAL,
+        FRIENDLY,
+        BOSS
+    }
     class NPC : Entity
     {
-        public List<Quest> quests = new List<Quest>();
-
-        public NPC(int ID) :
-            base (ID, "", 0,0,0,0,0)
+        private NPCStatus status;
+        public NPCStatus Status
         {
+            get
+            {
+                return status;
+            }
+            set
+            {
+                if (status != value)
+                {
+                    Changed = true;
+                    status = value;
+                }
+            }
+        }
+
+        public NPC(int ID, NPCStatus Status, string name, int level, Gender gender, float x, float y, float z, float r, int HP) :
+            base (ID, name, level, gender, x, y, z, r, 0.0f, 0.0f, 0.0f, HP)
+        {
+            status = Status;
             type = EntityType.NPC;
         }
 
@@ -22,7 +45,7 @@ namespace Project_X_Game_Server
             {
                 base.BuildTransmission(out result);
 
-
+                buffer.WriteInteger((int)status);
 
                 Changed = false;
                 AnimState.Changed = false;

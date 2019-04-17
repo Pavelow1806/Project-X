@@ -77,23 +77,6 @@ namespace Project_X_Game_Server
             }
         }
 
-        private int _TargetID = -1;
-        public int TargetID
-        {
-            get
-            {
-                return _TargetID;
-            }
-            set
-            {
-                if (_TargetID != value)
-                {
-                    Changed = true;
-                    _TargetID = value;
-                }
-            }
-        }
-
         private bool _InWorld = false;
         public bool InWorld
         {
@@ -107,12 +90,21 @@ namespace Project_X_Game_Server
                 {
                     Changed = true;
                     _InWorld = value;
+                    if (_InWorld)
+                    {
+                        World.instance.playersInWorld.Add(this);
+                    }
+                    else
+                    {
+                        World.instance.playersInWorld.Remove(this);
+                    }
                 }
             }
         }
 
-        public Player(int _Character_ID, string _Name, int _Level, float _x, float _y, float _z, float _r) :
-            base (_Character_ID, _Name, _Level, _x, _y, _z, _r)
+        public Player(int _Character_ID, string _Name, int _Level, Gender _gender, float _x, float _y, float _z, float _r,
+            float vX, float vY, float vZ, int HP, int Strength, int Agility) :
+            base (_Character_ID, _Name, _Level, _gender, _x, _y, _z, _r, vX, vY, vZ, HP)
         {
             Character_ID = _Character_ID;
         }
@@ -122,20 +114,6 @@ namespace Project_X_Game_Server
             if (Changed || AnimState.Changed || QuestChanged())
             {
                 base.BuildTransmission(out result);
-
-                buffer.WriteFloat(camera_Pos_X);
-                buffer.WriteFloat(camera_Pos_Y);
-                buffer.WriteFloat(camera_Pos_Z);
-                buffer.WriteFloat(camera_Rotation_Y);
-
-                buffer.WriteInteger(CountQuests());
-                foreach (Quest quest in quests)
-                {
-                    buffer.WriteByte((byte)((quest.Complete) ? 1 : 0));
-                    buffer.WriteByte((byte)((quest.TurnedIn) ? 1 : 0));
-                    buffer.WriteByte((byte)((quest.Active) ? 1 : 0));
-                    buffer.WriteInteger(quest.ObjectiveProgress);
-                }
 
                 Changed = false;
                 AnimState.Changed = false;

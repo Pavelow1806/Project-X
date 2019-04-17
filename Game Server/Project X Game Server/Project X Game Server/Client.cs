@@ -31,6 +31,8 @@ namespace Project_X_Game_Server
             {
                 Username = "";
                 Email = "";
+                if (World.instance.players.ContainsKey(Character_ID))
+                    World.instance.players[Character_ID].InWorld = false;
                 Character_ID = -1;
                 LoggedIn = false;
                 LoggedInTime = default(DateTime);

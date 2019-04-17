@@ -106,16 +106,56 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(character.Key);
                     buffer.WriteString(character.Value.Character_Name);
                     buffer.WriteInteger(character.Value.Character_Level);
+                    buffer.WriteInteger(character.Value.Gender);
                     buffer.WriteFloat(character.Value.Pos_X);
                     buffer.WriteFloat(character.Value.Pos_Y);
                     buffer.WriteFloat(character.Value.Pos_Z);
                     buffer.WriteFloat(character.Value.Rotation_Y);
-                    // Camera
                     buffer.WriteFloat(character.Value.Camera_Pos_X);
                     buffer.WriteFloat(character.Value.Camera_Pos_Y);
                     buffer.WriteFloat(character.Value.Camera_Pos_Z);
                     buffer.WriteFloat(character.Value.Camera_Rotation_Y);
+                    buffer.WriteInteger(character.Value.Health);
+                    buffer.WriteInteger(character.Value.Strength);
+                    buffer.WriteInteger(character.Value.Agility);
                     Log.log(LineNumber, "Sending tbl_Characters.. Character ID " + character.Key.ToString() + "/" + Data.tbl_Characters.Count.ToString(), Log.LogType.SENT);
+                }
+                // tbl_NPC
+                LineNumber = Log.log("Sending tbl_NPC..", Log.LogType.SENT);
+
+                buffer.WriteInteger(Data.tbl_NPC.Count);
+                foreach (KeyValuePair<int, _NPC> npc in Data.tbl_NPC)
+                {
+                    buffer.WriteInteger(npc.Key);
+                    buffer.WriteInteger(npc.Value.Status);
+                    buffer.WriteString(npc.Value.Name);
+                    buffer.WriteInteger(npc.Value.Level);
+                    buffer.WriteInteger(npc.Value.Gender);
+                    buffer.WriteFloat(npc.Value.Pos_X);
+                    buffer.WriteFloat(npc.Value.Pos_Y);
+                    buffer.WriteFloat(npc.Value.Pos_Z);
+                    buffer.WriteFloat(npc.Value.Rotation_Y);
+                    buffer.WriteInteger(npc.Value.HP);
+                    Log.log(LineNumber, "Sending tbl_NPC.. NPC ID " + npc.Key.ToString() + "/" + Data.tbl_NPC.Count.ToString(), Log.LogType.SENT);
+                }
+                // tbl_Quests
+                LineNumber = Log.log("Sending tbl_Quests..", Log.LogType.SENT);
+
+                buffer.WriteInteger(Data.tbl_Quests.Count);
+                foreach (KeyValuePair<int, _Quests> quest in Data.tbl_Quests)
+                {
+                    buffer.WriteInteger(quest.Key);
+                    buffer.WriteString(quest.Value.Title);
+                    buffer.WriteString(quest.Value.Start_Text);
+                    buffer.WriteString(quest.Value.End_Text);
+                    buffer.WriteInteger(quest.Value.Reward_ID);
+                    buffer.WriteInteger(quest.Value.NPC_Start_ID);
+                    buffer.WriteInteger(quest.Value.NPC_End_ID);
+                    buffer.WriteInteger(quest.Value.Objective_Target);
+                    buffer.WriteInteger(quest.Value.Start_Requirement_Quest_ID);
+                    buffer.WriteInteger(quest.Value.Item_Objective_ID);
+                    buffer.WriteInteger(quest.Value.NPC_Objective_ID);
+                    Log.log(LineNumber, "Sending tbl_Quests.. Quest ID " + quest.Key.ToString() + "/" + Data.tbl_Quests.Count.ToString(), Log.LogType.SENT);
                 }
                 
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());

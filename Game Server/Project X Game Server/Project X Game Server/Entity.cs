@@ -8,8 +8,16 @@ namespace Project_X_Game_Server
 {
     public enum EntityType
     {
+        NONE,
         Player,
-        NPC
+        NPC,
+        Object
+    }
+    public enum Gender
+    {
+        Male,
+        Female,
+        NA
     }
     class Entity
     {
@@ -47,6 +55,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        public Gender gender;
         private float _x = 0.0f;
         public float x
         {
@@ -111,6 +120,127 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        private float _vx = 0.0f;
+        public float vx
+        {
+            get
+            {
+                return _vx;
+            }
+            set
+            {
+                if (value != _vx)
+                {
+                    Changed = true;
+                    _vx = value;
+                }
+            }
+        }
+        private float _vy = 0.0f;
+        public float vy
+        {
+            get
+            {
+                return _vy;
+            }
+            set
+            {
+                if (value != _vy)
+                {
+                    Changed = true;
+                    _vy = value;
+                }
+            }
+        }
+        private float _vz = 0.0f;
+        public float vz
+        {
+            get
+            {
+                return _vz;
+            }
+            set
+            {
+                if (value != _vz)
+                {
+                    Changed = true;
+                    _vz = value;
+                }
+            }
+        }
+        private int _TargetType = -1;
+        public int TargetType
+        {
+            get
+            {
+                return _TargetType;
+            }
+            set
+            {
+                if (_TargetType != value)
+                {
+                    Changed = true;
+                    _TargetType = value;
+                }
+            }
+        }
+        private int _TargetID = -1;
+        public int TargetID
+        {
+            get
+            {
+                return _TargetID;
+            }
+            set
+            {
+                if (_TargetID != value)
+                {
+                    Changed = true;
+                    _TargetID = value;
+                }
+            }
+        }
+        private int max_HP = 100;
+        public int Max_HP
+        {
+            get
+            {
+                return max_HP;
+            }
+        }
+        private int current_HP = 100;
+        public int Current_HP
+        {
+            get
+            {
+                return current_HP;
+            }
+            set
+            {
+                if (current_HP != value)
+                {
+                    Changed = true;
+                    current_HP = value;
+                }
+            }
+        }
+        private int strength = 0;
+        public int Strength
+        {
+            get
+            {
+                return strength;
+            }
+        }
+        private int agility = 0;
+        public int Agility
+        {
+            get
+            {
+                return agility;
+            }
+        }
+
 
         public AnimationState AnimState = new AnimationState();
 
@@ -118,31 +248,59 @@ namespace Project_X_Game_Server
 
         protected ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
 
-        public Entity(int ID, string name, int level, float x, float y, float z, float r)
+        public Entity(int ID, string name, int level, Gender _gender, float x, float y, float z, float r,
+            float vX, float vY, float vZ, int HP, int Strength, int Agility)
         {
             Entity_ID = World.instance.EntityCounter;
             _Name = name;
             _Level = level;
+            gender = _gender;
             _x = x;
             _y = y;
             _z = z;
             _r = r;
+            _vx = vX;
+            _vy = vY;
+            _vz = vZ;
+            max_HP = HP;
+            current_HP = HP;
         }
 
         protected virtual void BuildTransmission(out byte[] data)
         {
-            buffer = null;
-            buffer.WriteInteger((int)type);
+            buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteInteger(Entity_ID);
             buffer.WriteString(Name);
             buffer.WriteInteger(Level);
+            buffer.WriteInteger((int)gender);
             buffer.WriteFloat(_x);
             buffer.WriteFloat(_y);
             buffer.WriteFloat(_z);
             buffer.WriteFloat(_r);
-            buffer.WriteByte((byte)((AnimState.Attacking) ? 1 : 0));
-            buffer.WriteByte((byte)((AnimState.Attacked) ? 1 : 0));
-            buffer.WriteByte((byte)((AnimState.Dead) ? 1 : 0));
+            buffer.WriteFloat(_vx);
+            buffer.WriteFloat(_vy);
+            buffer.WriteFloat(_vz);
+            buffer.WriteInteger(current_HP);
+            buffer.WriteInteger(max_HP);
+            buffer.WriteInteger(strength);
+            buffer.WriteInteger(agility);
+            bool b3 = false;
+            bool b4 = false;
+            bool b5 = false;
+            bool b6 = false;
+            bool b7 = false;
+            byte bools = BitwiseRefinement.BoolsToByte
+            (
+                AnimState.Attacking,
+                AnimState.Attacked,
+                AnimState.Dead,
+                b3,
+                b4,
+                b5,
+                b6,
+                b7
+            );
+            buffer.WriteByte(bools);
             switch (type)
             {
                 case EntityType.Player:
@@ -159,6 +317,8 @@ namespace Project_X_Game_Server
                 default:
                     break;
             }
+            buffer.WriteInteger(_TargetType);
+            buffer.WriteInteger(_TargetID);
             data = null;
         }
     }

@@ -31,7 +31,8 @@ namespace Project_X_Game_Server
         Invalid,
         AuthenticateSyncServer,
         WorldRequest,
-        UpdatePlayerData
+        UpdatePlayerData,
+        UpdateQuestLog
     }
     class SendData
     {
@@ -41,7 +42,7 @@ namespace Project_X_Game_Server
 
         int LineNumber = 0;
 
-        public static bool PostUDPMessages = true;
+        public static bool PostUDPMessages = false;
 
         private static void sendData(ConnectionType destination, string PacketName, int index, byte[] data)
         {
@@ -165,6 +166,22 @@ namespace Project_X_Game_Server
                 return;
             }
         }
+        public static void UpdateQuestLog(Quest_Log ql, int Character_ID)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)SyncServerSendPacketNumbers.UpdateQuestLog, ref buffer);
+                buffer.WriteInteger(ql.Quest_ID);
+                buffer.WriteInteger(Character_ID);
+                buffer.WriteInteger(ql.ObjectiveProgress);
+                buffer.WriteInteger((int)ql.Status);
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Update Quest Log packet failed. > " + e.Message, Log.LogType.ERROR);
+            }
+        }
         #endregion
 
         #region Client Communication
@@ -173,10 +190,10 @@ namespace Project_X_Game_Server
             try
             {
                 Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                IPAddress Receiver = IPAddress.Parse(connection.IP.Substring(connection.IP.IndexOf(':')));
+                IPAddress Receiver = IPAddress.Parse(connection.IP.Substring(0, connection.IP.IndexOf(':')));
                 IPEndPoint EndPoint = new IPEndPoint(Receiver, Network.UDPPort);
                 socket.SendTo(data, EndPoint);
-                if (PostUDPMessages) Log.log("UDP Packet sent to IP: " + connection.IP.Substring(connection.IP.IndexOf(':')).ToString() + " Length: " + data.Length.ToString(), Log.LogType.SENT);
+                if (PostUDPMessages) Log.log("UDP Packet sent to IP: " + connection.IP.Substring(0, connection.IP.IndexOf(':')) + " Length: " + data.Length.ToString(), Log.LogType.SENT);
             }
             catch (Exception e)
             {
@@ -207,6 +224,7 @@ namespace Project_X_Game_Server
                 BuildBasePacket((int)ClientSendPacketNumbers.CharacterDetails, ref buffer);
                 buffer.WriteString(Character.Name);
                 buffer.WriteInteger(Character.Level);
+                buffer.WriteInteger((int)Character.gender);
                 buffer.WriteFloat(Character.x);
                 buffer.WriteFloat(Character.y);
                 buffer.WriteFloat(Character.z);
@@ -217,23 +235,7 @@ namespace Project_X_Game_Server
                 buffer.WriteFloat(Character.Camera_Pos_Z);
                 buffer.WriteFloat(Character.Camera_Rotation_Y);
                 buffer.WriteInteger(Character.Character_ID);
-                //buffer.WriteInteger(Character.quests.Count);
-                //foreach (Quest quest in Character.quests)
-                //{
-                //    buffer.WriteInteger(quest.ID);
-                //    buffer.WriteString(quest.Title);
-                //    buffer.WriteString(quest.StartText);
-                //    buffer.WriteString(quest.EndText);
-                //    buffer.WriteInteger(quest.Reward);
-                //    buffer.WriteInteger(quest.NPCStartID);
-                //    buffer.WriteInteger(quest.NPCEndID);
-                //    buffer.WriteInteger(quest.ObjectiveTarget);
-                //    buffer.WriteInteger(quest.StartRequirementQuestID);
-                //    buffer.WriteByte((quest.Complete) ? (byte)1 : (byte)0);
-                //    buffer.WriteByte((quest.TurnedIn) ? (byte)1 : (byte)0);
-                //    buffer.WriteByte((quest.Active) ? (byte)1 : (byte)0);
-                //    buffer.WriteInteger(quest.ObjectiveProgress);
-                //}
+
                 Log.log("Sending Character Data packet to client..", Log.LogType.SENT);
                 sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.CharacterDetails.ToString(), index, buffer.ToArray());
             }
@@ -244,11 +246,10 @@ namespace Project_X_Game_Server
                 throw;
             }
         }
-        public static void SendUDP_WorldUpdate(int index, BufferReturn request)
+        public static void SendUDP_WorldUpdate(int index)
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-            buffer.WriteInteger((int)request);
-            byte[] data = World.instance.PullBuffer(request);
+            byte[] data = World.instance.PullBuffer();
             if (data != null)
             {
                 buffer.WriteBytes(data);

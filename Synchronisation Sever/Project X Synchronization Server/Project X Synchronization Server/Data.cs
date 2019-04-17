@@ -15,12 +15,18 @@ namespace Project_X_Synchronization_Server
         #region Table Storage
         // Accounts table
         public static Dictionary<int, _Accounts> tbl_Accounts = new Dictionary<int, _Accounts>();
-
         //Activity table
         public static Dictionary<int, _Activity> tbl_Activity = new Dictionary<int, _Activity>();
-
         // Characters table
         public static Dictionary<int, _Characters> tbl_Characters = new Dictionary<int, _Characters>();
+        // Quests table
+        public static Dictionary<int, _Quests> tbl_Quests = new Dictionary<int, _Quests>();
+        // Quest Log table
+        public static Dictionary<int, _Quest_Log> tbl_Quest_Log = new Dictionary<int, _Quest_Log>();
+        // NPC table
+        public static Dictionary<int, _NPC> tbl_NPC = new Dictionary<int, _NPC>();
+        // Collectable table
+        public static Dictionary<int, _Collectables> tbl_Collectables = new Dictionary<int, _Collectables>();
         #endregion
 
         private static List<string> UpdateQueries;
@@ -102,7 +108,53 @@ namespace Project_X_Synchronization_Server
                     }
                 }
             }
+            foreach (KeyValuePair<int, _Quest_Log> log in tbl_Quest_Log)
+            {
+                if (log.Value.SQL != "")
+                {
+                    UpdateQueries.Add(log.Value.SQL);
+                    log.Value.SQL = "";
+                    ++NumberQueries;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                }
+            }
+            foreach (KeyValuePair<int, _NPC> npc in tbl_NPC)
+            {
+                if (npc.Value.SQL != "")
+                {
+                    UpdateQueries.Add(npc.Value.SQL);
+                    npc.Value.SQL = "";
+                    ++NumberQueries;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                }
+            }
             return UpdateQueries;
+        }
+
+        public static _Quest_Log ContainsKey(int character_ID, int quest_ID)
+        {
+            foreach (KeyValuePair<int, _Quest_Log> ql in tbl_Quest_Log)
+            {
+                if (ql.Value.Character_ID == character_ID && ql.Value.Quest_ID == quest_ID)
+                {
+                    return ql.Value;
+                }
+            }
+            return null;
         }
     }
 
@@ -291,7 +343,8 @@ namespace Project_X_Synchronization_Server
             activity_Type = Activity_Type;
             dTStamp = DTStamp;
             session_ID = Session_ID;
-            New = true;
+            New = _New;
+            if (_New) SQL = CreateSQL();
         }
         private string CreateSQL()
         {
@@ -484,17 +537,51 @@ namespace Project_X_Synchronization_Server
                 }
             }
         }
+        private int gender;
+        public int Gender
+        {
+            get
+            {
+                return gender;
+            }
+        }
+        private int health;
+        public int Health
+        {
+            get
+            {
+                return health;
+            }
+        }
+        private int strength;
+        public int Strength
+        {
+            get
+            {
+                return strength;
+            }
+        }
+        private int agility;
+        public int Agility
+        {
+            get
+            {
+                return agility;
+            }
+        }
 
         public bool In_World = false;
 
-        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, 
+        public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, int Gender,
             float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, 
-            float Camera_Pos_X, float Camera_Pos_Y, float Camera_Pos_Z, float Camera_Rotation_Y)
+            float Camera_Pos_X, float Camera_Pos_Y, float Camera_Pos_Z, float Camera_Rotation_Y,
+            int Health, int Strength, int Agility)
         {
             character_ID = Character_ID;
             account_ID = Account_ID;
             character_Name = Character_Name;
             character_Level = Character_Level;
+            gender = Gender;
             pos_X = Pos_X;
             pos_Y = Pos_Y;
             pos_Z = Pos_Z;
@@ -503,6 +590,9 @@ namespace Project_X_Synchronization_Server
             camera_Pos_Y = Camera_Pos_Y;
             camera_Pos_Z = Camera_Pos_Z;
             camera_Rotation_Y = Camera_Rotation_Y;
+            health = Health;
+            strength = Strength;
+            agility = Agility;
             New = false;
         }
         private string CreateSQL()
@@ -518,6 +608,377 @@ namespace Project_X_Synchronization_Server
             {
                 return "";
             }
+        }
+    }
+    class _Quests : Record
+    {
+        private int quest_ID;
+        public int Quest_ID
+        {
+            get
+            {
+                return quest_ID;
+            }
+        }
+        private string title;
+        public string Title
+        {
+            get
+            {
+                return title;
+            }
+        }
+        private string start_Text;
+        public string Start_Text
+        {
+            get
+            {
+                return start_Text;
+            }
+        }
+        private string end_Text;
+        public string End_Text
+        {
+            get
+            {
+                return end_Text;
+            }
+        }
+        private int reward_ID;
+        public int Reward_ID
+        {
+            get
+            {
+                return reward_ID;
+            }
+        }
+        private int nPC_Start_ID;
+        public int NPC_Start_ID
+        {
+            get
+            {
+                return nPC_Start_ID;
+            }
+        }
+        private int nPC_End_ID;
+        public int NPC_End_ID
+        {
+            get
+            {
+                return nPC_End_ID;
+
+            }
+        }
+        private int objective_Target;
+        public int Objective_Target
+        {
+            get
+            {
+                return objective_Target;
+            }
+        }
+        private int start_Requirement_Quest_ID;
+        public int Start_Requirement_Quest_ID
+        {
+            get
+            {
+                return start_Requirement_Quest_ID;
+            }
+        }
+        private int item_Objective_ID;
+        public int Item_Objective_ID
+        {
+            get
+            {
+                return item_Objective_ID;
+            }
+        }
+        private int nPC_Objective_ID;
+        public int NPC_Objective_ID
+        {
+            get
+            {
+                return nPC_Objective_ID;
+            }
+        }
+
+        public _Quests(int Quest_ID, string Title, string Start_Text, string End_Text, int Reward_ID, 
+            int NPC_Start_ID, int NPC_End_ID, int Objective_Target, int Start_Requirement_Quest_ID, 
+            int Item_Objective_ID, int NPC_Objective_ID)
+        {
+            quest_ID = Quest_ID;
+            title = Title;
+            start_Text = Start_Text;
+            end_Text = End_Text;
+            reward_ID = Reward_ID;
+            nPC_Start_ID = NPC_Start_ID;
+            nPC_End_ID = NPC_End_ID;
+            objective_Target = Objective_Target;
+            start_Requirement_Quest_ID = Start_Requirement_Quest_ID;
+            item_Objective_ID = Item_Objective_ID;
+            nPC_Objective_ID = NPC_Objective_ID;
+
+            New = false;
+        }
+    }
+    class _Quest_Log : Record
+    {
+        private int log_ID;
+        public int Log_ID
+        {
+            get
+            {
+                return log_ID;
+            }
+        }
+        private int character_ID;
+        public int Character_ID
+        {
+            get
+            {
+                return character_ID;
+            }
+        }
+        private int quest_ID;
+        public int Quest_ID
+        {
+            get
+            {
+                return quest_ID;
+            }
+        }
+        private int quest_Status;
+        public int Quest_Status
+        {
+            get
+            {
+                return quest_Status;
+            }
+            set
+            {
+                if (quest_Status != value)
+                {
+                    Changed = true;
+                    quest_Status = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private int progress;
+        public int Progress
+        {
+            get
+            {
+                return progress;
+            }
+            set
+            {
+                if (progress != value)
+                {
+                    Changed = true;
+                    progress = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+
+        public _Quest_Log(int Log_ID, int Character_ID, int Quest_ID, int Quest_Status, int Progress, bool _New = false)
+        {
+            log_ID = Log_ID;
+            character_ID = Character_ID;
+            quest_ID = Quest_ID;
+            quest_Status = Quest_Status;
+            progress = Progress;
+            if (_New)
+            {
+                log_ID = Database.instance.Insert_Record("INSERT INTO tbl_Quest_Log (Character_ID, Quest_ID, Quest_Status) SELECT " + character_ID + ", " + quest_ID + ", " + quest_Status + ";");
+            }
+            New = false;
+        }
+
+        private string CreateSQL()
+        {
+            if (Changed)
+            {
+                return "UPDATE tbl_Quest_Log SET Character_ID = " + character_ID + ", Quest_ID = " + quest_ID + ", Quest_Status = " + quest_Status + ", Progress = " + progress + " WHERE Log_ID = " + log_ID + ";";
+            }
+            else
+            {
+                return "";
+            }
+        }
+    }
+    class _NPC : Record
+    {
+        private int nPC_ID;
+        public int NPC_ID
+        {
+            get
+            {
+                return nPC_ID;
+            }
+        }
+        private int status;
+        public int Status
+        {
+            get
+            {
+                return status;
+            }
+        }
+        private string name;
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+        }
+        private int level;
+        public int Level
+        {
+            get
+            {
+                return level;
+            }
+        }
+        private float pos_X;
+        public float Pos_X
+        {
+            get
+            {
+                return pos_X;
+            }
+            set
+            {
+                if (pos_X != value)
+                {
+                    Changed = true;
+                    pos_X = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float pos_Y;
+        public float Pos_Y
+        {
+            get
+            {
+                return pos_Y;
+            }
+            set
+            {
+                if (pos_Y != value)
+                {
+                    Changed = true;
+                    pos_Y = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float pos_Z;
+        public float Pos_Z
+        {
+            get
+            {
+                return pos_Z;
+            }
+            set
+            {
+                if (pos_Z != value)
+                {
+                    Changed = true;
+                    pos_Z = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private float rotation_Y;
+        public float Rotation_Y
+        {
+            get
+            {
+                return rotation_Y;
+            }
+            set
+            {
+                if (rotation_Y != value)
+                {
+                    Changed = true;
+                    rotation_Y = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
+        private int hP;
+        public int HP
+        {
+            get
+            {
+                return hP;
+            }
+        }
+        private int gender;
+        public int Gender
+        {
+            get
+            {
+                return gender;
+            }
+        }
+
+        public _NPC(int NPC_ID, int Status, string Name, int Level, 
+            float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, 
+            int HP, int Gender)
+        {
+            nPC_ID = NPC_ID;
+            status = Status;
+            name = Name;
+            level = Level;
+            pos_X = Pos_X;
+            pos_Y = Pos_Y;
+            pos_Z = Pos_Z;
+            rotation_Y = Rotation_Y;
+            hP = HP;
+            gender = Gender;
+            New = false;
+        }
+
+        private string CreateSQL()
+        {
+            if (Changed)
+            {
+                return "UPDATE tbl_NPC SET Pos_X = " + pos_X + ", Pos_Y = " + pos_Y + ", Pos_Z = " + pos_Z + ", Rotation_Y = " + rotation_Y + ", HP = " + hP + " WHERE NPC_ID = " + nPC_ID + ";";
+            }
+            else
+            {
+                return "";
+            }
+        }
+    }
+    class _Collectables
+    {
+        private int collectable_ID;
+        public int Collectable_ID
+        {
+            get
+            {
+                return collectable_ID;
+            }
+        }
+        private string collectable_Name;
+        public string Collectable_Name
+        {
+            get
+            {
+                return collectable_Name;
+            }
+        }
+
+        public _Collectables(int Collectable_ID, string Collectable_Name)
+        {
+            collectable_ID = Collectable_ID;
+            collectable_Name = Collectable_Name;
         }
     }
 }

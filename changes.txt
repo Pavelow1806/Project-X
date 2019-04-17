@@ -1,0 +1,844 @@
+NetworkPlayer
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+
+public class NetworkPlayer : MonoBehaviour
+{
+    public GameObject Target;
+    public Character Details;
+    public TextMeshPro DisplayName;
+    private Rigidbody rb;
+
+    private Light Highlight;
+    public bool Highlighted = false;
+
+    private void Awake()
+    {
+        if (transform.GetChild(1).GetComponent<Light>() != null)
+        {
+            Highlight = transform.GetChild(1).GetComponent<Light>();
+        }
+        if (rb == null)
+        {
+            rb = GetComponent<Rigidbody>();
+        }
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        Highlight.color = GameObject.Find("UI Controller").GetComponent<InGameUI>().Friendly;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        if (Highlighted)
+        {
+            Highlight.enabled = true;
+        }
+        else
+        {
+            Highlight.enabled = false;
+        }
+
+        if (Details != null)
+        {
+            transform.position = Details.Location;
+            transform.rotation = Quaternion.Euler(0, Details.Rotation, 0);
+            rb.velocity = Details.Velocity;
+        }
+    }
+}
+Network
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Net.Sockets;
+using System.IO;
+using System;
+using System.Net;
+using UnityEngine.SceneManagement;
+using TMPro;
+
+public enum ConnectionType
+{
+    GAMESERVER,
+    CLIENT,
+    LOGINSERVER,
+    SYNCSERVER
+}
+public enum BufferReturn
+{
+    Player,
+    NPC
+}
+public enum EntityType
+{
+    Player,
+    NPC
+}
+
+public class Network : MonoBehaviour
+{
+    public static Network instance;
+    public Connection LoginServerConnection = new Connection("Login Server", 5600);
+    public Connection GameServerConnection = new Connection("Game Server", 5601);
+    public Account account = new Account();
+    public ProcessData processData = new ProcessData();
+    public SendData sendData = new SendData();
+    public UDP udp = new UDP();
+
+    public MenuManagement menu;
+
+    public GameObject player = null;
+    public Rigidbody playerRigidbody = null;
+    public GameObject camera = null;
+    public Animator playerAnimator = null;
+    public bool ObtainedPlayerData = false;
+
+    public GameObject PlayerPool;
+
+    public Dictionary<int, GameObject> NetworkPlayers = new Dictionary<int, GameObject>();
+
+    public GameObject NetworkPlayerMale = null;
+    public GameObject NetworkPlayerFemale = null;
+
+    private DateTime NextUpdate = default;
+    private const int MSToUpdate = 50;
+    public const int SecondsToTimeOut = 10;
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+        instance = this;
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        menu = GameObject.Find("Menu Controller").GetComponent<MenuManagement>();
+        NextUpdate = DateTime.Now.AddMilliseconds(MSToUpdate);
+    }
+    private void OnApplicationQuit()
+    {
+        LoginServerConnection.Disconnect();
+        GameServerConnection.Disconnect();
+    }
+    public void SetCharacterStartingLocation()
+    {
+        if (SceneManager.GetActiveScene().name == "World" && account.activeCharacter != null)
+        {
+            player = GameObject.Find("Player");
+            playerRigidbody = player.GetComponent<Rigidbody>();
+            camera = Camera.main.gameObject;
+            PlayerPool = GameObject.Find("NetworkPlayers");
+            playerAnimator = player.GetComponent<Animator>();
+            player.transform.position = account.activeCharacter.Location;
+            player.transform.rotation = Quaternion.Euler(0, account.activeCharacter.Rotation, 0);
+            //camera.transform.position = account.activeCharacter.CameraLocation;
+            //camera.transform.rotation = Quaternion.Euler(camera.transform.eulerAngles.x, account.activeCharacter.Rotation, camera.transform.eulerAngles.z);
+            Debug.Log(account.activeCharacter.Name + " location set to " + account.activeCharacter.Location);
+        }
+    }
+    private void Update()
+    {
+        try
+        {
+            if (DateTime.Now >= NextUpdate && player != null && camera != null)
+            {
+                SendData.instance.Update(player.transform.position, player.transform.eulerAngles.y, playerRigidbody.velocity, playerAnimator, camera.transform.position, camera.transform.eulerAngles.y);
+                NextUpdate = DateTime.Now.AddMilliseconds(MSToUpdate);
+            }
+            if (udp != null && udp.DataChanged)
+            {
+                byte[] data = udp.ObtainData();
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                buffer.WriteBytes(data);
+                BufferReturn r = (BufferReturn)buffer.ReadInteger();
+                switch (r)
+                {
+                    case BufferReturn.Player:
+                        int playerCount = buffer.ReadInteger();
+                        List<int> playerlog = new List<int>();
+                        for (int i = 0; i < playerCount; i++)
+                        {
+                            // Position and Instanstiation
+                            EntityType t = (EntityType)buffer.ReadInteger();
+                            int Entity_ID = buffer.ReadInteger();
+                            playerlog.Add(Entity_ID);
+                            string Name = buffer.ReadString();
+                            // If to ensure that we're not adding our own character into the game
+                            if (Account.instance != null && Account.instance.activeCharacter != null && (Entity_ID != Account.instance.activeCharacter.ID && Name != Account.instance.activeCharacter.Name))
+                            {
+                                int Level = buffer.ReadInteger();
+                                Gender gender = (Gender)buffer.ReadInteger();
+                                float x = buffer.ReadFloat();
+                                float y = buffer.ReadFloat();
+                                float z = buffer.ReadFloat();
+                                float rot = buffer.ReadFloat();
+                                float vx = buffer.ReadFloat();
+                                float vy = buffer.ReadFloat();
+                                float vz = buffer.ReadFloat();
+                                if (!NetworkPlayers.ContainsKey(Entity_ID))
+                                {
+                                    GameObject SpawnedPlayer = null;
+                                    if (gender == Gender.Male)
+                                    {
+                                        SpawnedPlayer = Instantiate(NetworkPlayerMale, PlayerPool.transform);
+                                    }
+                                    else
+                                    {
+                                        SpawnedPlayer = Instantiate(NetworkPlayerFemale, PlayerPool.transform);
+                                    }
+                                    SpawnedPlayer.name = Name;
+                                    Debug.Log("No GameObject found for selected player '" + Name + ", creating one..");
+                                    NetworkPlayers.Add(Entity_ID, SpawnedPlayer);
+                                    if (NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().DisplayName == null)
+                                    {
+                                        NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().DisplayName = NetworkPlayers[Entity_ID].transform.GetChild(2).GetComponent<TextMeshPro>();
+                                    }
+                                    NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().DisplayName.text = Name;
+                                }
+                                if (NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().Details == null)
+                                {
+                                    NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().Details = new Character(Name, gender, new Vector3(x, y, z), rot, new Vector3(vx,vy,vz), Entity_ID, Level);
+                                }
+                                else
+                                {
+                                    Character c = NetworkPlayers[Entity_ID].GetComponent<NetworkPlayer>().Details;
+                                    c.Location = new Vector3(x, y, z);
+                                    c.Name = Name;
+                                    c.Level = Level;
+                                    c.Rotation = rot;
+                                    c.Velocity = new Vector3(vx, vy, vz);
+                                }
+                                // Animations
+                                Animator anim = NetworkPlayers[Entity_ID].GetComponent<Animator>();
+                                bool Attacking = false;
+                                bool Attacked = false;
+                                bool Dead = false;
+                                bool b3 = false;
+                                bool b4 = false;
+                                bool b5 = false;
+                                bool b6 = false;
+                                bool b7 = false;
+                                byte bools = buffer.ReadByte();
+                                BitwiseRefinement.ByteToBools(bools, out Attacking, out Attacked, out Dead, out b3, out b4, out b5, out b6, out b7);
+                                anim.SetBool("Attacking", Attacking);
+                                if (Attacked) anim.SetTrigger("Attacked");
+                                anim.SetBool("Dead", Dead);
+                                float Forward = buffer.ReadFloat();
+                                float Turn = buffer.ReadFloat();
+                                bool Crouch = buffer.ReadByte() == 1 ? true : false;
+                                bool OnGround = buffer.ReadByte() == 1 ? true : false;
+                                float Jump = buffer.ReadFloat();
+                                float JumpLeg = buffer.ReadFloat();
+                                bool Cast = buffer.ReadByte() == 1 ? true : false;
+                                anim.SetFloat("Forward", Forward);
+                                anim.SetFloat("Turn", Turn);
+                                anim.SetBool("Crouch", Crouch);
+                                anim.SetBool("OnGround", OnGround);
+                                anim.SetFloat("Jump", Jump);
+                                anim.SetFloat("JumpLeg", JumpLeg);
+                                if (Cast) anim.SetTrigger("Cast");
+                            }
+                        }
+                        List<GameObject> ToDestroyList = new List<GameObject>();
+                        foreach (KeyValuePair<int, GameObject> player in NetworkPlayers)
+                        {
+                            bool found = false;
+                            foreach (int ID in playerlog)
+                            {
+                                if (ID == player.Key) found = true;
+                            }
+                            if (!found)
+                            {
+                                ToDestroyList.Add(player.Value);
+                                NetworkPlayers.Remove(player.Key);
+                            }
+                        }
+                        for (int i = 0; i < ToDestroyList.Count; i++)
+                        {
+                            Destroy(ToDestroyList[i]);
+                        }
+                        break;
+                    case BufferReturn.NPC:
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("An error occured whilst attempting to update the UDP world data structure. > " + e.Message);
+        }
+    }
+
+    public void Disconnect()
+    {
+        if (LoginServerConnection.Connected)
+            LoginServerConnection.Disconnect();
+
+        if (GameServerConnection.Connected)
+            GameServerConnection.Disconnect();
+
+        udp.Running = false;
+        SceneManager.LoadScene(0);
+    }
+}
+
+public class Connection
+{
+    #region Connection Information
+    public string Name = "";
+    //public string IP = "18.219.100.207";
+    public string IP = "127.0.0.1";
+    public int Port = 0;
+    public bool Connected = false;
+    public TcpClient Socket = null;
+    public NetworkStream Stream = null;
+    public StreamReader Reader = null;
+    public StreamWriter Writer = null;
+    public byte[] asyncBuff = null;
+    public bool ShouldHandleData = false;
+
+    private const int BufferSize = 4096;
+    #endregion
+
+    public Connection(string name, int port)
+    {
+        Name = name;
+        Port = port;
+    }
+
+    public void Connect()
+    {
+        try
+        {
+            if (Socket != null)
+            {
+                if (Socket.Connected || Connected)
+                {
+                    return;
+                }
+                Socket.Close();
+                Socket = null;
+            }
+            Socket = new TcpClient();
+            Socket.ReceiveBufferSize = BufferSize;
+            Socket.SendBufferSize = BufferSize;
+            Socket.NoDelay = false;
+            Array.Resize(ref asyncBuff, BufferSize * 2);
+            Socket.BeginConnect(IP, Port, new AsyncCallback(ConnectCallback), Socket);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection: " + e.Message);
+            Network.instance.Disconnect();
+        }
+    }
+    void ConnectCallback(IAsyncResult result)
+    {
+        try
+        {
+            if (Socket != null)
+            {
+                Socket.EndConnect(result);
+                if (Socket.Connected == false)
+                {
+                    Connected = false;
+                    Disconnect();
+                    return;
+                }
+                else
+                {
+                    Socket.NoDelay = true;
+                    Stream = Socket.GetStream();
+                    Stream.BeginRead(asyncBuff, 0, BufferSize * 2, OnReceive, null);
+                    Connected = true;
+                    if (Name == "Login Server")
+                    {
+                        Debug.Log("Connection to login server successful, sending login request.");
+                        SendData.instance.LoginRequest(Account.instance.Username, Account.instance.Password);
+                    }
+                    if (Name == "Game Server")
+                    {
+                        Debug.Log("Connection to game server successful, starting UDP listener..");
+                        UDP.instance.Start();
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection: " + e.Message);
+            Network.instance.Disconnect();
+        }
+    }
+    void OnReceive(IAsyncResult result)
+    {
+        try
+        {
+            if (Socket != null)
+            {
+                if (Socket == null)
+                    return;
+
+                int readBytes = Stream.EndRead(result);
+                byte[] newBytes = null;
+                Array.Resize(ref newBytes, readBytes);
+                Buffer.BlockCopy(asyncBuff, 0, newBytes, 0, readBytes);
+
+                if (readBytes == 0)
+                {
+                    Disconnect();
+                    Account.instance.Logout();
+                    return;
+                }
+
+                ProcessData.processData(newBytes);
+
+                ShouldHandleData = true;
+
+                if (Socket == null)
+                    return;
+                Stream.BeginRead(asyncBuff, 0, BufferSize * 2, OnReceive, null);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection: " + e.Message);
+            Network.instance.LoginServerConnection.Disconnect();
+            Network.instance.GameServerConnection.Disconnect();
+            SceneManager.LoadScene(0);
+        }
+    }
+
+    public void Disconnect()
+    {
+        Connected = false;
+        if (Socket != null)
+        {
+            Socket.Close();
+            Socket = null;
+        }
+        if (Stream != null)
+        {
+            Stream.Close();
+            Stream = null;
+        }
+        if (Reader != null)
+        {
+            Reader.Close();
+            Reader = null;
+        }
+        if (Writer != null)
+        {
+            Writer.Close();
+            Writer = null;
+        }
+        Account.instance.Logout();
+        Network.instance.Disconnect();
+    }
+}
+
+public class Account
+{
+    public static Account instance;
+
+    public List<Character> characters = new List<Character>();
+    public Character activeCharacter;
+    public string Username = "";
+    public string Password = "";
+    public string Email = "";
+    public bool LoggedIn = false;
+
+    public Account()
+    {
+        instance = this;
+    }
+
+    public void Logout()
+    {
+        characters.Clear();
+        activeCharacter = null;
+        Username = "";
+        Email = "";
+        LoggedIn = false;
+    }
+}
+
+public class ProcessData
+{
+    public enum LoginServerProcessPacketNumbers
+    {
+        Invalid,
+        LoginResponse,
+        RegistrationResponse,
+        CharacterList,
+        ConfirmWhiteList
+    }
+    public enum GameServerProcessPacketNumbers
+    {
+        Invalid,
+        WorldPacket,
+        CharacterDetails,
+
+    }
+    public static ProcessData instance;
+
+    #region Locking
+    private static readonly object lockObj = new object();
+    #endregion
+
+    private static ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+
+    private static byte[] Data = null;
+    private static int Index = -1;
+
+    public ProcessData()
+    {
+        instance = this;
+    }
+    public static void processData(byte[] data)
+    {
+        try
+        {
+            lock (lockObj)
+            {
+                buffer.WriteBytes(data);
+                ConnectionType Source = (ConnectionType)buffer.ReadInteger();
+                int PacketNumber = buffer.ReadInteger();
+
+                Data = data;
+                object[] obj;
+
+                if (Source == ConnectionType.LOGINSERVER)
+                {
+                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(LoginServerProcessPacketNumbers), PacketNumber) || Network.instance.LoginServerConnection.Socket == null)
+                    {
+                        return;
+                    }
+                    Debug.Log("Packet Received [#" + PacketNumber.ToString("000") + " " + ((LoginServerProcessPacketNumbers)PacketNumber).ToString() + "] from Login Server, Processing response..");
+
+                    obj = new object[1];
+                    obj[0] = Source;
+
+                    typeof(ProcessData).InvokeMember(((LoginServerProcessPacketNumbers)PacketNumber).ToString(), System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static, null, null, obj);
+                }
+                else if (Source == ConnectionType.GAMESERVER)
+                {
+                    if (PacketNumber == 0 || !Enum.IsDefined(typeof(GameServerProcessPacketNumbers), PacketNumber) || Network.instance.GameServerConnection.Socket == null)
+                    {
+                        return;
+                    }
+                    Debug.Log("Packet Received [#" + PacketNumber.ToString("000") + " " + ((GameServerProcessPacketNumbers)PacketNumber).ToString() + "] from Game Server, Processing response..");
+
+                    obj = new object[1];
+                    obj[0] = Source;
+
+                    typeof(ProcessData).InvokeMember(((GameServerProcessPacketNumbers)PacketNumber).ToString(), System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static, null, null, obj);
+                }
+                Reset();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection: " + e.Message);
+            Network.instance.Disconnect();
+        }
+    }
+
+    private static void Reset()
+    {
+        buffer = new ByteBuffer.ByteBuffer();
+    }
+
+    private static void LoginResponse(ConnectionType type)
+    {
+        byte response = buffer.ReadByte();
+        if (response == 1) // Successful
+        {
+            Debug.Log("Login was successful.");
+            Account.instance.LoggedIn = true;
+            SendData.instance.CharacterListRequest(Account.instance.Username);
+        }
+        else if (response == 0) // Unsuccessful
+        {
+            Debug.Log("Login was unsuccessful.");
+        }
+        else if (response == 2) // Error
+        {
+            Debug.Log("Login was unsuccessful, there was an error!");
+        }
+    }
+    private static void RegistrationResponse(ConnectionType type)
+    {
+
+    }
+    private static void CharacterList(ConnectionType type)
+    {
+        byte success = buffer.ReadByte();
+        int CharCount = buffer.ReadInteger();
+        if (success == 1) // Success
+        {
+            Debug.Log("Character list obtained, loading into memory..");
+            Account.instance.characters.Clear();
+            for (int i = 0; i < CharCount; i++)
+            {
+                string name = buffer.ReadString();
+                int level = buffer.ReadInteger();
+                Account.instance.characters.Add(new Character(name, Gender.Male, new Vector3(0, 0, 0), level));
+                Debug.Log("Loaded character: " + name + " level " + level.ToString());
+            }
+            Network.instance.menu.loadCharacters = true;
+            Debug.Log("Character list loaded.");
+        }
+        else // Failed
+        {
+            Debug.Log("The server failed to get a character list.");
+        }
+    }
+    private static void ConfirmWhiteList(ConnectionType type)
+    {
+        Debug.Log("Client white listed, attempting to connect to game server..");
+        Network.instance.GameServerConnection.Connect();
+    }
+    private static void WorldPacket(ConnectionType type)
+    {
+        //TBC
+    }
+    private static void CharacterDetails(ConnectionType type)
+    {
+        string Name = buffer.ReadString();
+        int Level = buffer.ReadInteger();
+        Gender gender = (Gender)buffer.ReadInteger();
+        float x = buffer.ReadFloat();
+        float y = buffer.ReadFloat();
+        float z = buffer.ReadFloat();
+        float r = buffer.ReadFloat();
+        float cx = buffer.ReadFloat();
+        float cy = buffer.ReadFloat();
+        float cz = buffer.ReadFloat();
+        float cr = buffer.ReadFloat();
+        int ID = buffer.ReadInteger();
+        Account.instance.activeCharacter = new Character(Name, gender, new Vector3(x, y, z), r, ID, Level);
+        Account.instance.activeCharacter.CameraLocation = new Vector3(cx, cy, cz);
+        Account.instance.activeCharacter.CameraRotation = cr;
+        Network.instance.ObtainedPlayerData = true;
+    }
+}
+
+public class SendData
+{
+    #region Locking
+    private static readonly object lockObj = new object();
+    #endregion
+
+    public enum LoginServerSendPacketNumbers
+    {
+        Invalid,
+        LoginRequest,
+        RegistrationRequest,
+        CharacterListRequest
+    }
+    public enum GameServerSendPacketNumbers
+    {
+        Invalid,
+        EnterWorld,
+        Update
+    }
+    public static SendData instance;
+
+    private ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+
+    private static byte[] Data = null;
+    public SendData()
+    {
+        instance = this;
+    }
+    private void sendData(ConnectionType destination)
+    {
+        try
+        {
+            lock (lockObj)
+            {
+                switch (destination)
+                {
+                    case ConnectionType.GAMESERVER:
+                        Network.instance.GameServerConnection.Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        break;
+                    case ConnectionType.LOGINSERVER:
+                        Network.instance.LoginServerConnection.Stream.BeginWrite(buffer.ToArray(), 0, buffer.ToArray().Length, null, null);
+                        break;
+                    default:
+                        break;
+                }
+                Reset();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection: " + e.Message);
+            Network.instance.Disconnect();
+        }
+    }
+    private void BuildBasePacket(int packetNumber)
+    {
+        buffer.WriteInteger((int)ConnectionType.CLIENT);
+        buffer.WriteInteger(packetNumber);
+    }
+
+    public void LoginRequest(string username, string password)
+    {
+        BuildBasePacket((int)LoginServerSendPacketNumbers.LoginRequest);
+
+        buffer.WriteString(username);
+        buffer.WriteString(password);
+        
+        sendData(ConnectionType.LOGINSERVER);
+    }
+    public void RegistrationRequest(string username, string password, string email)
+    {
+        BuildBasePacket((int)LoginServerSendPacketNumbers.RegistrationRequest);
+
+        buffer.WriteString(username);
+        buffer.WriteString(password);
+        buffer.WriteString(email);
+        
+        sendData(ConnectionType.LOGINSERVER);
+    }
+    public void CharacterListRequest(string username)
+    {
+        BuildBasePacket((int)LoginServerSendPacketNumbers.CharacterListRequest);
+
+        buffer.WriteString(username);
+
+        sendData(ConnectionType.LOGINSERVER);
+    }
+    public void EnterWorld(string Character_Name)
+    {
+        BuildBasePacket((int)GameServerSendPacketNumbers.EnterWorld);
+
+        buffer.WriteString(Account.instance.Username);
+        buffer.WriteString(Character_Name);
+
+        sendData(ConnectionType.GAMESERVER);
+    }
+    public void Update(Vector3 Pos, float Rot, Vector3 Velocity, Animator anim, Vector3 CameraPos, float CameraRot)
+    {
+        BuildBasePacket((int)GameServerSendPacketNumbers.Update);
+        // Character ID
+        buffer.WriteInteger(Account.instance.activeCharacter.ID);
+        // Position
+        buffer.WriteFloat(Pos.x);
+        buffer.WriteFloat(Pos.y);
+        buffer.WriteFloat(Pos.z);
+        buffer.WriteFloat(Rot);
+        buffer.WriteFloat(Velocity.x);
+        buffer.WriteFloat(Velocity.y);
+        buffer.WriteFloat(Velocity.z);
+        // Camera Position
+        buffer.WriteFloat(CameraPos.x);
+        buffer.WriteFloat(CameraPos.y);
+        buffer.WriteFloat(CameraPos.z);
+        buffer.WriteFloat(CameraRot);
+        // Animation Status
+        buffer.WriteFloat(anim.GetFloat("Forward"));
+        buffer.WriteFloat(anim.GetFloat("Turn"));
+        buffer.WriteFloat(anim.GetFloat("Jump"));
+        buffer.WriteFloat(anim.GetFloat("JumpLeg"));
+        byte bools = BitwiseRefinement.BoolsToByte
+            (
+                anim.GetBool("Crouch"),
+                anim.GetBool("OnGround"),
+                anim.GetBool("Attacking"),
+                anim.GetBool("Dead"),
+                anim.GetBool("Attacked"),
+                anim.GetBool("Cast"),
+                false,
+                false
+            );
+        buffer.WriteByte(bools);
+        // Target
+
+        sendData(ConnectionType.GAMESERVER);
+    }
+
+    private void Reset()
+    {
+        buffer = new ByteBuffer.ByteBuffer();
+        Data = null;
+    }
+}
+
+public class UDP
+{
+    public static UDP instance;
+
+    public const int UdpPort = 5604;
+
+    public bool Running = false;
+
+    private byte[] Data = null;
+    public bool DataChanged = false;
+
+    #region Locking
+    private static readonly object lockObj = new object();
+    #endregion
+
+    public UDP()
+    {
+        instance = this;
+    }
+
+    public void Start()
+    {
+        Running = true;
+        UdpClient listener = new UdpClient(UdpPort);
+        IPEndPoint EndPoint = new IPEndPoint(IPAddress.Any, UdpPort);
+        try
+        {
+            while (Running)
+            {
+                // Receive the bytes from the UDP port
+                byte[] bytes = listener.Receive(ref EndPoint);
+                // Check if there is data transmitted
+                if (bytes.Length > 0)
+                {
+                    // Lock the process to ensure thread safe processing
+                    lock (lockObj)
+                    {
+                        // Store the data into the public data variable for access by external classes/functions/processes
+                        Data = bytes;
+                    }
+                    DataChanged = true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Lost Connection (UDP): " + e.Message);
+            Network.instance.LoginServerConnection.Disconnect();
+            Network.instance.GameServerConnection.Disconnect();
+            SceneManager.LoadScene(0);
+        }
+        finally
+        {
+            listener.Close();
+        }
+    }
+    public byte[] ObtainData()
+    {
+        lock (lockObj)
+        {
+            DataChanged = false;
+            return Data;
+        }
+    }
+}
