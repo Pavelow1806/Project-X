@@ -318,8 +318,7 @@ namespace Project_X_Synchronization_Server
                 while (reader.Read())
                 {
                     Data.tbl_NPC.Add(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
-                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"), 
-                        reader.GetInt32("HP"), reader.GetInt32("Gender")));
+                        reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -342,7 +341,8 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Collectables.Add(reader.GetInt32("Collectable_ID"), new _Collectables(reader.GetInt32("Collectable_ID"), reader.GetString("Collectable_Name")));
+                    Data.tbl_Collectables.Add(reader.GetInt32("Collectable_ID"), new _Collectables(reader.GetInt32("Collectable_ID"), reader.GetString("Collectable_Name"),
+                        reader.GetInt32("Respawn_Time")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -352,6 +352,31 @@ namespace Project_X_Synchronization_Server
                     else
                     {
                         Log.log(SubLineNumber, "Downloading data from tbl_Collectables, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Spawn_Positions
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Spawn_Positions into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Spawn_Positions;");
+                reader = QueryDatabase("SELECT * FROM tbl_Spawn_Positions;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Spawn_Positions.Add(reader.GetInt32("Position_ID"), new _Spawn_Positions(reader.GetInt32("Position_ID"),
+                        reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
+                        reader.GetInt32("NPC_ID"), reader.GetInt32("Collectable_ID")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Spawn_Positions, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Spawn_Positions, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
                             ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
                     }
                 }

@@ -27,6 +27,8 @@ namespace Project_X_Synchronization_Server
         public static Dictionary<int, _NPC> tbl_NPC = new Dictionary<int, _NPC>();
         // Collectable table
         public static Dictionary<int, _Collectables> tbl_Collectables = new Dictionary<int, _Collectables>();
+        // Spawn Position table
+        public static Dictionary<int, _Spawn_Positions> tbl_Spawn_Positions = new Dictionary<int, _Spawn_Positions>();
         #endregion
 
         private static List<string> UpdateQueries;
@@ -842,74 +844,6 @@ namespace Project_X_Synchronization_Server
                 return level;
             }
         }
-        private float pos_X;
-        public float Pos_X
-        {
-            get
-            {
-                return pos_X;
-            }
-            set
-            {
-                if (pos_X != value)
-                {
-                    Changed = true;
-                    pos_X = value;
-                    SQL = CreateSQL();
-                }
-            }
-        }
-        private float pos_Y;
-        public float Pos_Y
-        {
-            get
-            {
-                return pos_Y;
-            }
-            set
-            {
-                if (pos_Y != value)
-                {
-                    Changed = true;
-                    pos_Y = value;
-                    SQL = CreateSQL();
-                }
-            }
-        }
-        private float pos_Z;
-        public float Pos_Z
-        {
-            get
-            {
-                return pos_Z;
-            }
-            set
-            {
-                if (pos_Z != value)
-                {
-                    Changed = true;
-                    pos_Z = value;
-                    SQL = CreateSQL();
-                }
-            }
-        }
-        private float rotation_Y;
-        public float Rotation_Y
-        {
-            get
-            {
-                return rotation_Y;
-            }
-            set
-            {
-                if (rotation_Y != value)
-                {
-                    Changed = true;
-                    rotation_Y = value;
-                    SQL = CreateSQL();
-                }
-            }
-        }
         private int hP;
         public int HP
         {
@@ -926,21 +860,25 @@ namespace Project_X_Synchronization_Server
                 return gender;
             }
         }
+        private int respawn_Time;
+        public int Respawn_Time
+        {
+            get
+            {
+                return respawn_Time;
+            }
+        }
 
-        public _NPC(int NPC_ID, int Status, string Name, int Level, 
-            float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, 
-            int HP, int Gender)
+        public _NPC(int NPC_ID, int Status, string Name, int Level,  
+            int HP, int Gender, int Respawn_Time)
         {
             nPC_ID = NPC_ID;
             status = Status;
             name = Name;
             level = Level;
-            pos_X = Pos_X;
-            pos_Y = Pos_Y;
-            pos_Z = Pos_Z;
-            rotation_Y = Rotation_Y;
             hP = HP;
             gender = Gender;
+            respawn_Time = Respawn_Time;
             New = false;
         }
 
@@ -948,7 +886,7 @@ namespace Project_X_Synchronization_Server
         {
             if (Changed)
             {
-                return "UPDATE tbl_NPC SET Pos_X = " + pos_X + ", Pos_Y = " + pos_Y + ", Pos_Z = " + pos_Z + ", Rotation_Y = " + rotation_Y + ", HP = " + hP + " WHERE NPC_ID = " + nPC_ID + ";";
+                return "UPDATE tbl_NPC SET HP = " + hP + " WHERE NPC_ID = " + nPC_ID + ";";
             }
             else
             {
@@ -974,11 +912,90 @@ namespace Project_X_Synchronization_Server
                 return collectable_Name;
             }
         }
+        private int respawn_Time;
+        public int Respawn_Time
+        {
+            get
+            {
+                return respawn_Time;
+            }
+        }
 
-        public _Collectables(int Collectable_ID, string Collectable_Name)
+        public _Collectables(int Collectable_ID, string Collectable_Name, int Respawn_Time)
         {
             collectable_ID = Collectable_ID;
             collectable_Name = Collectable_Name;
+            respawn_Time = Respawn_Time;
+        }
+    }
+    class _Spawn_Positions
+    {
+        private int position_ID;
+        public int Position_ID
+        {
+            get
+            {
+                return position_ID;
+            }
+        }
+        private float pos_X;
+        public float Pos_X
+        {
+            get
+            {
+                return pos_X;
+            }
+        }
+        private float pos_Y;
+        public float Pos_Y
+        {
+            get
+            {
+                return pos_Y;
+            }
+        }
+        private float pos_Z;
+        public float Pos_Z
+        {
+            get
+            {
+                return pos_Z;
+            }
+        }
+        private float rotation_Y;
+        public float Rotation_Y
+        {
+            get
+            {
+                return rotation_Y;
+            }
+        }
+        private int nPC_ID;
+        public int NPC_ID
+        {
+            get
+            {
+                return nPC_ID;
+            }
+        }
+        private int collectable_ID;
+        public int Collectable_ID
+        {
+            get
+            {
+                return collectable_ID;
+            }
+        }
+
+        public _Spawn_Positions(int Position_ID, float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, int NPC_ID, int Collectable_ID)
+        {
+            position_ID = Position_ID;
+            pos_X = Pos_X;
+            pos_Y = Pos_Y;
+            pos_Z = Pos_Z;
+            rotation_Y = Rotation_Y;
+            nPC_ID = NPC_ID;
+            collectable_ID = Collectable_ID;
         }
     }
 }

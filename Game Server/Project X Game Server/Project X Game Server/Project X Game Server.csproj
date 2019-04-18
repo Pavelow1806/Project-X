@@ -63,6 +63,7 @@
     <Compile Include="AnimationState.cs" />
     <Compile Include="BitwiseRefinement.cs" />
     <Compile Include="Client.cs" />
+    <Compile Include="Collectable.cs" />
     <Compile Include="Connection.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="Entity.cs" />

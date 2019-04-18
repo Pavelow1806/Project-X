@@ -149,7 +149,7 @@ namespace Project_X_Synchronization_Server
             }
             else
             {
-                Data.tbl_Quest_Log.Add()
+                //Data.tbl_Quest_Log.Add()
             }
         }
         #endregion

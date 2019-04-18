@@ -55,29 +55,35 @@ namespace Project_X_Login_Server
 
         public virtual void Close()
         {
-            // Connection
-            IP = "";
-            Username = "";
-            ConnectedTime = default(DateTime);
+            lock (lockObj)
+            {
+                if (Connected)
+                {
+                    // Connection
+                    IP = "";
+                    Username = "";
+                    ConnectedTime = default(DateTime);
 
-            // Network
-            ReadBuff = null;
-            if (Stream != null)
-            {
-                Stream.Close();
-                Stream = null;
+                    // Network
+                    ReadBuff = null;
+                    if (Stream != null)
+                    {
+                        Stream.Close();
+                        Stream = null;
+                    }
+                    if (Socket != null)
+                    {
+                        Socket.Close();
+                        Socket = null;
+                    }
+                    if (Type == ConnectionType.GAMESERVER || Type == ConnectionType.SYNCSERVER)
+                    {
+                        Network.instance.Servers.Remove(Type);
+                    }
+                    // Rejoin main thread
+                    ConnectionThread.Join();
+                }
             }
-            if (Socket != null)
-            {
-                Socket.Close();
-                Socket = null;
-            }
-            if (Type == ConnectionType.GAMESERVER || Type == ConnectionType.SYNCSERVER)
-            {
-                Network.instance.Servers.Remove(Type);
-            }
-            // Rejoin main thread
-            ConnectionThread.Join();
         }
 
         public void BeginThread()

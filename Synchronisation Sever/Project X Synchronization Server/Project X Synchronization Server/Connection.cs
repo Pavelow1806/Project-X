@@ -53,6 +53,10 @@ namespace Project_X_Synchronization_Server
         public bool Authenticated = false;
         #endregion
 
+        #region Locking
+        private static readonly object lockObj = new object();
+        #endregion
+
         int LineNumber = -1;
 
         public Connection(ConnectionType type, int id, int port, string ip)
@@ -207,41 +211,47 @@ namespace Project_X_Synchronization_Server
         }
         public void Disconnect()
         {
-            if (Type == ConnectionType.CLIENT)
+            lock (lockObj)
             {
-                // Connection
-                IP = "";
-                Port = 0;
-            }
-            ConnectedTime = default(DateTime);
+                if (Connected)
+                {
+                    if (Type == ConnectionType.CLIENT)
+                    {
+                        // Connection
+                        IP = "";
+                        Port = 0;
+                    }
+                    ConnectedTime = default(DateTime);
 
-            // Network
-            Connected = false;
-            if (Socket != null)
-            {
-                Socket.Close();
-                Socket = null;
+                    // Network
+                    Connected = false;
+                    if (Socket != null)
+                    {
+                        Socket.Close();
+                        Socket = null;
+                    }
+                    if (Stream != null)
+                    {
+                        Stream.Close();
+                        Stream = null;
+                    }
+                    if (Reader != null)
+                    {
+                        Reader.Close();
+                        Reader = null;
+                    }
+                    if (Writer != null)
+                    {
+                        Writer.Close();
+                        Writer = null;
+                    }
+                    ConnectionAttemptCount = 0;
+                    Authenticated = false;
+                    Connected = false;
+                    Log.log(Type.ToString() + " disconnected, Attempting to connect again..", Log.LogType.CONNECTION);
+                    Start();
+                }
             }
-            if (Stream != null)
-            {
-                Stream.Close();
-                Stream = null;
-            }
-            if (Reader != null)
-            {
-                Reader.Close();
-                Reader = null;
-            }
-            if (Writer != null)
-            {
-                Writer.Close();
-                Writer = null;
-            }
-            ConnectionAttemptCount = 0;
-            Authenticated = false;
-            Connected = false;
-            Log.log(Type.ToString() + " disconnected, Attempting to connect again..", Log.LogType.CONNECTION);
-            Start();
         }
     }
 }

@@ -30,10 +30,19 @@ namespace Project_X_Game_Server
         AuthenticateServer,
         WorldRequest
     }
+    public enum SyncServerTable
+    {
+        tbl_Characters,
+        tbl_NPC,
+        tbl_Quests,
+        tbl_Collectables,
+        tbl_Spawn_Positions
+    }
     class ProcessData
     {
         #region Locking
         private static readonly object lockObj = new object();
+        private static readonly object lockWorldObj = new object();
         #endregion
 
         private static int LineNumber = 0;
@@ -148,43 +157,109 @@ namespace Project_X_Game_Server
         #region Synchronization Server Communication
         private static void WorldRequest(ConnectionType type, int index, byte[] data)
         {
-            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-            buffer.WriteBytes(data);
-            ReadHeader(ref buffer);
-            int LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Characters..", Log.LogType.RECEIVED);
-            int Character_Count = buffer.ReadInteger();
-            for (int i = 0; i < Character_Count; i++)
+            lock (lockWorldObj)
             {
-                int Character_ID = buffer.ReadInteger();
-                World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), (Gender)buffer.ReadInteger(),
-                    buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
-                    0.0f, 0.0f, 0.0f, 0));
-                World.instance.players[Character_ID].type = EntityType.Player;
-                World.instance.players[Character_ID].Camera_Pos_X = buffer.ReadFloat();
-                World.instance.players[Character_ID].Camera_Pos_Y = buffer.ReadFloat();
-                World.instance.players[Character_ID].Camera_Pos_Z = buffer.ReadFloat();
-                World.instance.players[Character_ID].Camera_Rotation_Y = buffer.ReadFloat();
-                Log.log(LineNumber, "Processing world request packet.. Added character " + i.ToString() + "/" + Character_Count.ToString(), Log.LogType.RECEIVED);
-            }
-            Log.log(LineNumber, "Successfully added characters (" + Character_Count.ToString() + ")", Log.LogType.SUCCESS);
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                buffer.WriteBytes(data);
+                ReadHeader(ref buffer);
 
-            LineNumber = Log.log("Processing world request packet.. Adding data from tbl_NPC..", Log.LogType.RECEIVED);
-            int NPC_Count = buffer.ReadInteger();
-            for (int i = 0; i < NPC_Count; i++)
-            {
-                int NPC_ID = buffer.ReadInteger();
-                World.instance.NPCs.Add(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(),
-                    (Gender)buffer.ReadInteger(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadInteger()));
-                Log.log(LineNumber, "Processing world request packet.. Added NPC " + i.ToString() + "/" + NPC_Count.ToString(), Log.LogType.RECEIVED);
-            }
-            Log.log(LineNumber, "Successfully added NPCs (" + NPC_Count.ToString() + ")", Log.LogType.SUCCESS);
-
-            LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Quests..", Log.LogType.RECEIVED);
-            int Quest_Count = buffer.ReadInteger();
-            for (int i = 0; i < Quest_Count; i++)
-            {
-                int Quest_ID = buffer.ReadInteger();
-
+                SyncServerTable table = (SyncServerTable)buffer.ReadInteger();
+                switch (table)
+                {
+                    case SyncServerTable.tbl_Characters:
+                        // tbl_Characters
+                        int LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Characters..", Log.LogType.RECEIVED);
+                        int Character_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Character_Count; i++)
+                        {
+                            int Character_ID = buffer.ReadInteger();
+                            if (!World.instance.players.ContainsKey(Character_ID))
+                            {
+                                World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), (Gender)buffer.ReadInteger(),
+                                    buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
+                                    0.0f, 0.0f, 0.0f, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                                World.instance.players[Character_ID].type = EntityType.Player;
+                                World.instance.players[Character_ID].Camera_Pos_X = buffer.ReadFloat();
+                                World.instance.players[Character_ID].Camera_Pos_Y = buffer.ReadFloat();
+                                World.instance.players[Character_ID].Camera_Pos_Z = buffer.ReadFloat();
+                                World.instance.players[Character_ID].Camera_Rotation_Y = buffer.ReadFloat();
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added character " + i.ToString() + "/" + Character_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedPlayers = true;
+                        Log.log(LineNumber, "Successfully added characters (" + Character_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    case SyncServerTable.tbl_NPC:
+                        // tbl_NPC
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_NPC..", Log.LogType.RECEIVED);
+                        int NPC_Count = buffer.ReadInteger();
+                        for (int i = 0; i < NPC_Count; i++)
+                        {
+                            int NPC_ID = buffer.ReadInteger();
+                            if (!World.instance.NPCs.ContainsKey(NPC_ID))
+                            {
+                                World.instance.NPCs.Add(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadInteger(),
+                                    (Gender)buffer.ReadInteger(), buffer.ReadInteger()));
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added NPC " + i.ToString() + "/" + NPC_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedNPCs = true;
+                        Log.log(LineNumber, "Successfully added NPCs (" + NPC_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    case SyncServerTable.tbl_Quests:
+                        // tbl_Quests
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Quests..", Log.LogType.RECEIVED);
+                        int Quest_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Quest_Count; i++)
+                        {
+                            int Quest_ID = buffer.ReadInteger();
+                            if (!World.instance.quests.ContainsKey(Quest_ID))
+                            {
+                                World.instance.quests.Add(Quest_ID, new Quest(Quest_ID, buffer.ReadString(), buffer.ReadString(), buffer.ReadString(),
+                                    buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added quest " + i.ToString() + "/" + Quest_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedQuests = true;
+                        Log.log(LineNumber, "Successfully added quests (" + Quest_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    case SyncServerTable.tbl_Collectables:
+                        // tbl_Collectables
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Collectables..", Log.LogType.RECEIVED);
+                        int Collectable_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Collectable_Count; i++)
+                        {
+                            int Collectable_ID = buffer.ReadInteger();
+                            if (!World.instance.collectables.ContainsKey(Collectable_ID))
+                            {
+                                World.instance.collectables.Add(Collectable_ID, new Collectable(Collectable_ID, buffer.ReadString(), buffer.ReadInteger(), 0.0f, 0.0f, 0.0f, 0.0f));
+                            }                                
+                            Log.log(LineNumber, "Processing world request packet.. Added collectable " + i.ToString() + "/" + Collectable_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedCollectables = true;
+                        Log.log(LineNumber, "Successfully added collectables (" + Collectable_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    case SyncServerTable.tbl_Spawn_Positions:
+                        // tbl_Spawn_Positions
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Spawn_Positions..", Log.LogType.RECEIVED);
+                        int Spawn_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Spawn_Count; i++)
+                        {
+                            int Spawn_ID = buffer.ReadInteger();
+                            if (!World.instance.spawns.ContainsKey(Spawn_ID))
+                            {
+                                World.instance.spawns.Add(Spawn_ID, new Spawn(Spawn_ID, buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
+                                    buffer.ReadFloat(), buffer.ReadInteger(), buffer.ReadInteger()));
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added spawn " + i.ToString() + "/" + Spawn_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedSpawns = true;
+                        Log.log(LineNumber, "Successfully added spawn (" + Spawn_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    default:
+                        break;
+                }
+                World.instance.Initialise();
             }
         }
         #endregion

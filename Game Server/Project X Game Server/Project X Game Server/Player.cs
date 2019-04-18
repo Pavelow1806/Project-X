@@ -10,7 +10,7 @@ namespace Project_X_Game_Server
     {
         public int Character_ID = -1;
 
-        public List<Quest> quests = new List<Quest>();
+        public List<Quest_Log> quests = new List<Quest_Log>();
 
         private float camera_Pos_X = 0.0f;
         public float Camera_Pos_X
@@ -104,7 +104,7 @@ namespace Project_X_Game_Server
 
         public Player(int _Character_ID, string _Name, int _Level, Gender _gender, float _x, float _y, float _z, float _r,
             float vX, float vY, float vZ, int HP, int Strength, int Agility) :
-            base (_Character_ID, _Name, _Level, _gender, _x, _y, _z, _r, vX, vY, vZ, HP)
+            base (_Character_ID, _Name, _Level, _gender, _x, _y, _z, _r, vX, vY, vZ, HP, Strength, Agility)
         {
             Character_ID = _Character_ID;
         }
@@ -123,16 +123,11 @@ namespace Project_X_Game_Server
         }
         private int CountQuests()
         {
-            int count = 0;
-            foreach (Quest quest in quests)
-            {
-                ++count;
-            }
-            return count;
+            return quests.Count;
         }
         private bool QuestChanged()
         {
-            foreach (Quest quest in quests)
+            foreach (Quest_Log quest in quests)
             {
                 if (quest.Changed)
                 {
@@ -143,7 +138,7 @@ namespace Project_X_Game_Server
         }
         private void QuestChanged(bool status)
         {
-            foreach (Quest quest in quests)
+            foreach (Quest_Log quest in quests)
             {
                 quest.Changed = status;
             }

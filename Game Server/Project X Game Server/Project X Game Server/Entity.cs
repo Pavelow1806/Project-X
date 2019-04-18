@@ -322,4 +322,28 @@ namespace Project_X_Game_Server
             data = null;
         }
     }
+    class Spawn
+    {
+        public int Spawn_ID = 0;
+        public float Pos_X = 0.0f;
+        public float Pos_Y = 0.0f;
+        public float Pos_Z = 0.0f;
+        public float Rotation_Y = 0.0f;
+        public int NPC_ID = -1;
+        public int Collectable_ID = -1;
+
+        public bool InUse = false;
+        public int Assigned_Entity_ID = -1;
+
+        public Spawn(int spawn_ID, float x, float y, float z, float ry, int npc, int coll)
+        {
+            Spawn_ID = spawn_ID;
+            Pos_X = x;
+            Pos_Y = y;
+            Pos_Z = z;
+            Rotation_Y = ry;
+            NPC_ID = npc;
+            Collectable_ID = coll;
+        }
+    }
 }

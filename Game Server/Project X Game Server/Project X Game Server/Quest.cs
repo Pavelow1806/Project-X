@@ -105,15 +105,54 @@ namespace Project_X_Game_Server
     }
     class Quest_Log
     {
-        #region Progress
-        public int Quest_ID;
-        public QuestStatus Status;
-        public int ObjectiveProgress = 0;
-        #endregion
-
-        public Quest_Log(int Character_ID)
+        private int quest_ID = 0;
+        public int Quest_ID
         {
-            Status = QuestStatus.InProgress;
+            get
+            {
+                return quest_ID;
+            }
+        }
+        private QuestStatus status;
+        public QuestStatus Status
+        {
+            get
+            {
+                return status;
+            }
+            set
+            {
+                if (status != value)
+                {
+                    Changed = true;
+                    status = value;
+                }
+            }
+        }
+        private int objectiveProgress;
+        public int ObjectiveProgress
+        {
+            get
+            {
+                return objectiveProgress;
+            }
+            set
+            {
+                if (objectiveProgress != value)
+                {
+                    Changed = true;
+                    objectiveProgress = value;
+                }
+            }
+        }
+
+        public bool Changed = false;
+
+        public Quest_Log(int Character_ID, int Quest_ID)
+        {
+            status = QuestStatus.InProgress;
+            quest_ID = Quest_ID;
+            objectiveProgress = 0;
         }
 
         public void Increment(int Character_ID)
