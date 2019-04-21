@@ -36,7 +36,9 @@ namespace Project_X_Synchronization_Server
         tbl_NPC,
         tbl_Quests,
         tbl_Collectables,
-        tbl_Spawn_Positions
+        tbl_Spawn_Positions,
+        tbl_Quest_Log,
+        tbl_Experience
     }
     class SendData
     {
@@ -126,6 +128,7 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(character.Value.Health);
                     buffer.WriteInteger(character.Value.Strength);
                     buffer.WriteInteger(character.Value.Agility);
+                    buffer.WriteInteger(character.Value.Experience);
                     buffer.WriteFloat(character.Value.Camera_Pos_X);
                     buffer.WriteFloat(character.Value.Camera_Pos_Y);
                     buffer.WriteFloat(character.Value.Camera_Pos_Z);
@@ -231,6 +234,53 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(sp.Value.NPC_ID);
                     buffer.WriteInteger(sp.Value.Collectable_ID);
                     Log.log(LineNumber, "Sending tbl_Spawn_Positions.. Spawn ID " + sp.Key.ToString() + "/" + Data.tbl_Spawn_Positions.Count.ToString(), Log.LogType.SENT);
+                }
+                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());
+
+                NextPacket = DateTime.Now.AddSeconds(TimeBetween);
+                while (DateTime.Now < NextPacket)
+                {
+
+                }
+
+                // tbl_Quest_Log
+                buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)GameServerSendPacketNumbers.WorldRequest, ref buffer);
+                LineNumber = Log.log("Sending tbl_Quest_Log..", Log.LogType.SENT);
+                buffer.WriteInteger((int)SyncServerTable.tbl_Quest_Log);
+                buffer.WriteInteger(Data.tbl_Quest_Log.Count);
+                foreach (KeyValuePair<int, _Quest_Log> ql in Data.tbl_Quest_Log)
+                {
+                    buffer.WriteInteger(ql.Key);
+                    buffer.WriteInteger(ql.Value.Character_ID);
+                    buffer.WriteInteger(ql.Value.Quest_ID);
+                    buffer.WriteInteger(ql.Value.Quest_Status);
+                    buffer.WriteInteger(ql.Value.Progress);
+                    Log.log(LineNumber, "Sending tbl_Quest_Log.. Quest Log ID " + ql.Key.ToString() + "/" + Data.tbl_Quest_Log.Count.ToString(), Log.LogType.SENT);
+                }
+                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());
+
+                NextPacket = DateTime.Now.AddSeconds(TimeBetween);
+                while (DateTime.Now < NextPacket)
+                {
+
+                }
+
+                // tbl_Experience
+                buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)GameServerSendPacketNumbers.WorldRequest, ref buffer);
+                LineNumber = Log.log("Sending tbl_Experience..", Log.LogType.SENT);
+                buffer.WriteInteger((int)SyncServerTable.tbl_Experience);
+                buffer.WriteInteger(Data.tbl_Experience.Count);
+                foreach (KeyValuePair<int, _Experience> ex in Data.tbl_Experience)
+                {
+                    buffer.WriteInteger(ex.Key);
+                    buffer.WriteInteger(ex.Value.Level);
+                    buffer.WriteInteger(ex.Value.Experience);
+                    buffer.WriteInteger(ex.Value.Strength);
+                    buffer.WriteInteger(ex.Value.Agility);
+                    buffer.WriteInteger(ex.Value.HP);
+                    Log.log(LineNumber, "Sending tbl_Experience.. Experience ID " + ex.Key.ToString() + "/" + Data.tbl_Experience.Count.ToString(), Log.LogType.SENT);
                 }
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());
             }

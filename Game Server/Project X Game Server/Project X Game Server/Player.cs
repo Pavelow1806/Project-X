@@ -76,6 +76,14 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        private int experience = 0;
+        public int Experience
+        {
+            get
+            {
+                return experience;
+            }
+        }
 
         private bool _InWorld = false;
         public bool InWorld
@@ -103,10 +111,11 @@ namespace Project_X_Game_Server
         }
 
         public Player(int _Character_ID, string _Name, int _Level, Gender _gender, float _x, float _y, float _z, float _r,
-            float vX, float vY, float vZ, int HP, int Strength, int Agility) :
+            float vX, float vY, float vZ, int HP, int Strength, int Agility, int Experience) :
             base (_Character_ID, _Name, _Level, _gender, _x, _y, _z, _r, vX, vY, vZ, HP, Strength, Agility)
         {
             Character_ID = _Character_ID;
+            experience = Experience;
         }
 
         protected override void BuildTransmission(out byte[] result)
@@ -114,6 +123,8 @@ namespace Project_X_Game_Server
             if (Changed || AnimState.Changed || QuestChanged())
             {
                 base.BuildTransmission(out result);
+
+                buffer.WriteInteger(Character_ID);
 
                 Changed = false;
                 AnimState.Changed = false;

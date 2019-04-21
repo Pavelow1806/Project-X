@@ -67,6 +67,7 @@
     <Compile Include="Connection.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="Experience.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Network.cs" />
     <Compile Include="NPC.cs" />

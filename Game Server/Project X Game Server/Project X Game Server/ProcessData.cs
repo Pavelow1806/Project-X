@@ -11,7 +11,9 @@ namespace Project_X_Game_Server
     {
         Invalid,
         EnterWorld,
-        Update
+        Update,
+        RequestQuest,
+        QuestInteract
     }
     public enum LoginServerProcessPacketNumbers
     {
@@ -36,7 +38,9 @@ namespace Project_X_Game_Server
         tbl_NPC,
         tbl_Quests,
         tbl_Collectables,
-        tbl_Spawn_Positions
+        tbl_Spawn_Positions,
+        tbl_Quest_Log,
+        tbl_Experience
     }
     class ProcessData
     {
@@ -177,7 +181,7 @@ namespace Project_X_Game_Server
                             {
                                 World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), (Gender)buffer.ReadInteger(),
                                     buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
-                                    0.0f, 0.0f, 0.0f, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                                    0.0f, 0.0f, 0.0f, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                                 World.instance.players[Character_ID].type = EntityType.Player;
                                 World.instance.players[Character_ID].Camera_Pos_X = buffer.ReadFloat();
                                 World.instance.players[Character_ID].Camera_Pos_Y = buffer.ReadFloat();
@@ -256,6 +260,38 @@ namespace Project_X_Game_Server
                         World.instance.ReceivedSpawns = true;
                         Log.log(LineNumber, "Successfully added spawn (" + Spawn_Count.ToString() + ")", Log.LogType.SUCCESS);
                         break;
+                    case SyncServerTable.tbl_Quest_Log:
+                        // tbl_Quest_Log
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Quest_Log..", Log.LogType.RECEIVED);
+                        int Quest_Log_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Quest_Log_Count; i++)
+                        {
+                            int Quest_Log_ID = buffer.ReadInteger();
+                            if (!World.instance.quest_log.ContainsKey(Quest_Log_ID))
+                            {
+                                World.instance.quest_log.Add(Quest_Log_ID, new Quest_Log(Quest_Log_ID, buffer.ReadInteger(), buffer.ReadInteger(), (QuestStatus)buffer.ReadInteger(), buffer.ReadInteger()));
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added log " + i.ToString() + "/" + Quest_Log_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedQuestLogs = true;
+                        Log.log(LineNumber, "Sucessfully added logs (" + Quest_Log_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
+                    case SyncServerTable.tbl_Experience:
+                        // tbl_Experience
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Quest_Log..", Log.LogType.RECEIVED);
+                        int Experience_Count = buffer.ReadInteger();
+                        for (int i = 0; i < Experience_Count; i++)
+                        {
+                            int XP_ID = buffer.ReadInteger();
+                            if (!World.instance.experience_levels.ContainsKey(XP_ID))
+                            {
+                                World.instance.experience_levels.Add(XP_ID, new Experience(XP_ID, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                            }
+                            Log.log(LineNumber, "Processing world request packet.. Added log " + i.ToString() + "/" + Experience_Count.ToString(), Log.LogType.RECEIVED);
+                        }
+                        World.instance.ReceivedExperience = true;
+                        Log.log(LineNumber, "Sucessfully added logs (" + Experience_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        break;
                     default:
                         break;
                 }
@@ -277,6 +313,15 @@ namespace Project_X_Game_Server
             player.InWorld = true;
             Network.instance.Clients[index].Character_ID = player.Character_ID;
             SendData.CharacterDetails(index, player);
+            for (int i = 0; i < Network.instance.Clients.Length; i++)
+            {
+                if (Network.instance.Clients[i] != null && Network.instance.Clients[i].Connected &&
+                    Network.instance.Clients[i].InGame())
+                {
+                    SendData.PlayerStateChange(i, player, PlayerState.Login);
+                }
+            }
+            SendData.WorldPacket(index);
         }
         private static void Update(ConnectionType type, int index, byte[] data)
         {
@@ -363,6 +408,22 @@ namespace Project_X_Game_Server
 
             SendData.UpdatePlayerData(player);
         }
+        private static void RequestQuest(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            int NPC_ID = buffer.ReadInteger();
+
+        }
         #endregion
+    }
+    public class MathF
+    {
+        public static float Distance(Entity e1, Entity e2)
+        {
+            return (float)Math.Sqrt((e2.x - e1.x) * (e2.x - e1.x) + (e2.x - e1.y) * (e2.y - e1.y) + (e2.z - e1.z) * (e2.z - e1.z));
+        }
     }
 }

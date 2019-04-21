@@ -19,7 +19,7 @@ namespace Project_X_Game_Server
         Female,
         NA
     }
-    class Entity
+    public class Entity
     {
         public EntityType type;
         public int Entity_ID = -1;
@@ -270,9 +270,6 @@ namespace Project_X_Game_Server
         {
             buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteInteger(Entity_ID);
-            buffer.WriteString(Name);
-            buffer.WriteInteger(Level);
-            buffer.WriteInteger((int)gender);
             buffer.WriteFloat(_x);
             buffer.WriteFloat(_y);
             buffer.WriteFloat(_z);
@@ -281,9 +278,6 @@ namespace Project_X_Game_Server
             buffer.WriteFloat(_vy);
             buffer.WriteFloat(_vz);
             buffer.WriteInteger(current_HP);
-            buffer.WriteInteger(max_HP);
-            buffer.WriteInteger(strength);
-            buffer.WriteInteger(agility);
             bool b3 = false;
             bool b4 = false;
             bool b5 = false;

@@ -13,7 +13,9 @@ namespace Project_X_Game_Server
     {
         Invalid,
         WorldPacket,
-        CharacterDetails
+        CharacterDetails,
+        PlayerStateChange,
+        QuestReturn
     }
     public enum ServerSendPacketNumbers
     {
@@ -34,6 +36,12 @@ namespace Project_X_Game_Server
         UpdatePlayerData,
         UpdateQuestLog
     }
+    public enum PlayerState
+    {
+        Login,
+        Logout,
+        Update
+    }
     class SendData
     {
         #region Locking
@@ -51,11 +59,11 @@ namespace Project_X_Game_Server
                 switch (destination)
                 {
                     case ConnectionType.CLIENT:
-                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString(), Log.LogType.SENT);
+                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString() + " (" + data.Length + ")", Log.LogType.SENT);
                         Network.instance.Clients[index].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.LOGINSERVER:
-                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString(), Log.LogType.SENT);
+                        Log.log("Successfully sent packet (" + PacketName + ") to " + destination.ToString() + " (" + data.Length + ")", Log.LogType.SENT);
                         Network.instance.Servers[destination].Stream.BeginWrite(data, 0, data.Length, null, null);
                         break;
                     case ConnectionType.SYNCSERVER:
@@ -206,7 +214,49 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
-                //TBC
+                // Players
+                buffer.WriteInteger(World.instance.playersInWorld.Count); // Minus 1 due to the player receiving not getting their own details
+                foreach (Player player in World.instance.playersInWorld)
+                {
+                    buffer.WriteInteger(player.Character_ID);
+                    buffer.WriteInteger(player.Entity_ID);
+                    buffer.WriteString(player.Name);
+                    buffer.WriteInteger((int)player.gender);
+                    buffer.WriteInteger(player.Level);
+                    buffer.WriteFloat(player.x);
+                    buffer.WriteFloat(player.y);
+                    buffer.WriteFloat(player.z);
+                    buffer.WriteFloat(player.r);
+                }
+                // NPCs
+                buffer.WriteInteger(World.instance.NPCsInWorld.Count);
+                foreach (NPC npc in World.instance.NPCsInWorld)
+                {
+                    buffer.WriteInteger(npc.NPC_ID);
+                    buffer.WriteInteger(npc.Entity_ID);
+                    buffer.WriteString(npc.Name);
+                    buffer.WriteInteger((int)npc.gender);
+                    buffer.WriteInteger((int)npc.Status);
+                    buffer.WriteInteger(npc.Level);
+                    buffer.WriteFloat(npc.x);
+                    buffer.WriteFloat(npc.y);
+                    buffer.WriteFloat(npc.z);
+                    buffer.WriteFloat(npc.r);
+                    buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
+                }
+                // Collectables
+                buffer.WriteInteger(World.instance.collectablesInWorld.Count);
+                foreach (Collectable collectable in World.instance.collectablesInWorld)
+                {
+                    buffer.WriteInteger(collectable.Collectable_ID);
+                    buffer.WriteInteger(collectable.Entity_ID);
+                    buffer.WriteString(collectable.Name);
+                    buffer.WriteFloat(collectable.x);
+                    buffer.WriteFloat(collectable.y);
+                    buffer.WriteFloat(collectable.z);
+                    buffer.WriteFloat(collectable.r);
+                    buffer.WriteByte((collectable.Active) ? (byte)1 : (byte)0);
+                }
                 Log.log("Sending initial world packet to client..", Log.LogType.SENT);
                 sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             }
@@ -222,9 +272,11 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.CharacterDetails, ref buffer);
+                buffer.WriteInteger(Character.Character_ID);
                 buffer.WriteString(Character.Name);
                 buffer.WriteInteger(Character.Level);
                 buffer.WriteInteger((int)Character.gender);
+                // Position
                 buffer.WriteFloat(Character.x);
                 buffer.WriteFloat(Character.y);
                 buffer.WriteFloat(Character.z);
@@ -234,8 +286,33 @@ namespace Project_X_Game_Server
                 buffer.WriteFloat(Character.Camera_Pos_Y);
                 buffer.WriteFloat(Character.Camera_Pos_Z);
                 buffer.WriteFloat(Character.Camera_Rotation_Y);
-                buffer.WriteInteger(Character.Character_ID);
-
+                // Stats
+                buffer.WriteInteger(Character.Max_HP);
+                buffer.WriteInteger(Character.Current_HP);
+                buffer.WriteInteger(Character.Strength);
+                buffer.WriteInteger(Character.Agility);
+                buffer.WriteInteger(Character.Experience);
+                // Quest Log
+                List<Quest_Log> ql = World.instance.GetQuestLog(Character.Character_ID);
+                buffer.WriteInteger(ql.Count);
+                foreach (Quest_Log l in ql)
+                {
+                    Quest q = World.instance.quests[l.Quest_ID];
+                    buffer.WriteInteger(q.ID);
+                    buffer.WriteString(q.Title);
+                    buffer.WriteInteger(l.ObjectiveProgress);
+                    buffer.WriteInteger(q.NPC_Start_ID);
+                    buffer.WriteInteger(q.NPC_End_ID);
+                    buffer.WriteInteger(q.Objective_Target);
+                }
+                // Available quests
+                List<Quest> availablequests = World.instance.GetAvailableQuests(Character.Character_ID);
+                buffer.WriteInteger(availablequests.Count);
+                foreach (Quest quest in availablequests)
+                {
+                    buffer.WriteInteger(quest.ID);
+                    buffer.WriteInteger(quest.NPC_Start_ID);
+                }
                 Log.log("Sending Character Data packet to client..", Log.LogType.SENT);
                 sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.CharacterDetails.ToString(), index, buffer.ToArray());
             }
@@ -244,6 +321,76 @@ namespace Project_X_Game_Server
                 Log.log("Building Send Character Data packet failed. > " + e.Message, Log.LogType.ERROR);
                 return;
                 throw;
+            }
+        }
+        public static void PlayerStateChange(int index, Player player, PlayerState state)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.PlayerStateChange, ref buffer);
+                buffer.WriteInteger((int)state);
+                switch (state)
+                {
+                    case PlayerState.Login:
+                        buffer.WriteInteger(player.Character_ID);
+                        buffer.WriteInteger(player.Entity_ID);
+                        buffer.WriteString(player.Name);
+                        buffer.WriteInteger((int)player.gender);
+                        buffer.WriteInteger(player.Level);
+                        buffer.WriteFloat(player.x);
+                        buffer.WriteFloat(player.y);
+                        buffer.WriteFloat(player.z);
+                        buffer.WriteFloat(player.r);
+                        break;
+                    case PlayerState.Logout:
+                        buffer.WriteInteger(player.Character_ID);
+                        buffer.WriteInteger(player.Entity_ID);
+                        break;
+                    case PlayerState.Update:
+                        buffer.WriteInteger(player.Character_ID);
+                        buffer.WriteInteger(player.Entity_ID);
+                        buffer.WriteInteger(player.Level);
+                        break;
+                    default:
+                        break;
+                }
+                Log.log("Sending Player State Change packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.PlayerStateChange.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Player State Change packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+        public static void QuestReturn(int index, QuestReturn qr)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.QuestReturn, ref buffer);
+                if (qr.Null)
+                {
+                    buffer.WriteByte(1);
+                }
+                else
+                {
+                    buffer.WriteByte(0);
+                    buffer.WriteInteger((int)qr.Status);
+                    buffer.WriteInteger(qr.Quest_ID);
+                    buffer.WriteInteger(qr.NPC_ID);
+                    buffer.WriteString(qr.Title);
+                    buffer.WriteString(qr.Text);
+                    buffer.WriteInteger(qr.Target);
+                }
+                Log.log("Sending Quest Return packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.QuestReturn.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Quest Return packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
             }
         }
         public static void SendUDP_WorldUpdate(int index)

@@ -67,6 +67,7 @@ namespace Project_X_Game_Server
         public NPC(int ID, NPCStatus Status, string name, int respawn_Time, int level, Gender gender, int HP) :
             base(ID, name, level, gender, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, HP, 100, 10)
         {
+            nPC_ID = ID;
             status = Status;
             type = EntityType.NPC;
             Respawn_Time = respawn_Time;
@@ -79,7 +80,7 @@ namespace Project_X_Game_Server
             {
                 base.BuildTransmission(out result);
 
-                buffer.WriteInteger((int)status);
+                buffer.WriteInteger(NPC_ID);
 
                 Changed = false;
                 AnimState.Changed = false;

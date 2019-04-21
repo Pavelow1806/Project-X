@@ -33,6 +33,19 @@ namespace Project_X_Game_Server
                 Email = "";
                 if (World.instance.players.ContainsKey(Character_ID))
                     World.instance.players[Character_ID].InWorld = false;
+                Player player = World.instance.FindPlayerInWorld(Character_ID);
+                if (player != null)
+                {
+                    for (int i = 0; i < Network.instance.Clients.Length; i++)
+                    {
+                        if (Network.instance.Clients[i] != null && Network.instance.Clients[i].Connected && Network.instance.Clients[i].LoggedIn &&
+                            Network.instance.Clients[i].InGame())
+                        {
+                            SendData.PlayerStateChange(i, player, PlayerState.Logout);
+                        }
+                    }
+                    World.instance.playersInWorld.Remove(player);
+                }
                 Character_ID = -1;
                 LoggedIn = false;
                 LoggedInTime = default(DateTime);

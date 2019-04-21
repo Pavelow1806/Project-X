@@ -29,6 +29,8 @@ namespace Project_X_Synchronization_Server
         public static Dictionary<int, _Collectables> tbl_Collectables = new Dictionary<int, _Collectables>();
         // Spawn Position table
         public static Dictionary<int, _Spawn_Positions> tbl_Spawn_Positions = new Dictionary<int, _Spawn_Positions>();
+        // Experience table
+        public static Dictionary<int, _Experience> tbl_Experience = new Dictionary<int, _Experience>();
         #endregion
 
         private static List<string> UpdateQueries;
@@ -571,13 +573,30 @@ namespace Project_X_Synchronization_Server
                 return agility;
             }
         }
+        private int experience;
+        public int Experience
+        {
+            get
+            {
+                return experience;
+            }
+            set
+            {
+                if (experience != value)
+                {
+                    Changed = true;
+                    experience = value;
+                    SQL = CreateSQL();
+                }
+            }
+        }
 
         public bool In_World = false;
 
         public _Characters(int Character_ID, int Account_ID, string Character_Name, int Character_Level, int Gender,
             float Pos_X, float Pos_Y, float Pos_Z, float Rotation_Y, 
             float Camera_Pos_X, float Camera_Pos_Y, float Camera_Pos_Z, float Camera_Rotation_Y,
-            int Health, int Strength, int Agility)
+            int Health, int Strength, int Agility, int Experience)
         {
             character_ID = Character_ID;
             account_ID = Account_ID;
@@ -595,6 +614,7 @@ namespace Project_X_Synchronization_Server
             health = Health;
             strength = Strength;
             agility = Agility;
+            experience = Experience;
             New = false;
         }
         private string CreateSQL()
@@ -604,7 +624,8 @@ namespace Project_X_Synchronization_Server
                 return "UPDATE tbl_Characters SET Character_Level = " + character_Level.ToString() + 
                     ", Pos_X = " + pos_X.ToString() + ", Pos_Y = " + pos_Y.ToString() + ", Pos_Z = " + pos_Z.ToString() + ", Rotation_Y = " + rotation_Y.ToString() +
                     ", Camera_Pos_X = " + camera_Pos_X.ToString() + ", Camera_Pos_Y = " + camera_Pos_Y.ToString() + ", Camera_Pos_Z = " + camera_Pos_Z.ToString() + ", Camera_Rotation_Y = " + camera_Rotation_Y.ToString() +
-                    " WHERE Account_ID = " + account_ID.ToString() + " AND Character_Name = '" + character_Name + "';";
+                    ", Health = " + health + ", Strength = " + strength + ", Agility = " + agility + ", Experience = " + experience +
+                    " WHERE Account_ID = " + account_ID.ToString() + " AND Character_ID = '" + character_ID + "';";
             }
             else
             {
@@ -793,7 +814,7 @@ namespace Project_X_Synchronization_Server
             progress = Progress;
             if (_New)
             {
-                log_ID = Database.instance.Insert_Record("INSERT INTO tbl_Quest_Log (Character_ID, Quest_ID, Quest_Status) SELECT " + character_ID + ", " + quest_ID + ", " + quest_Status + ";");
+                log_ID = Database.instance.Insert_Record("INSERT INTO tbl_Quest_Log (Character_ID, Quest_ID, Quest_Status, Progress) SELECT " + character_ID + ", " + quest_ID + ", " + quest_Status + ", " + progress + ";");
             }
             New = false;
         }
@@ -996,6 +1017,67 @@ namespace Project_X_Synchronization_Server
             rotation_Y = Rotation_Y;
             nPC_ID = NPC_ID;
             collectable_ID = Collectable_ID;
+        }
+    }
+    class _Experience
+    {
+        private int xP_ID;
+        public int XP_ID
+        {
+            get
+            {
+                return xP_ID;
+            }
+        }
+        private int level;
+        public int Level
+        {
+            get
+            {
+                return level;
+            }
+        }
+        private int experience;
+        public int Experience
+        {
+            get
+            {
+                return experience;
+            }
+        }
+        private int strength;
+        public int Strength
+        {
+            get
+            {
+                return strength;
+            }
+        }
+        private int agility;
+        public int Agility
+        {
+            get
+            {
+                return agility;
+            }
+        }
+        private int hp;
+        public int HP
+        {
+            get
+            {
+                return hp;
+            }
+        }
+
+        public _Experience(int XP_ID, int Level, int Experience, int Strength, int Agility, int HP)
+        {
+            xP_ID = XP_ID;
+            level = Level;
+            experience = Experience;
+            strength = Strength;
+            agility = Agility;
+            hp = HP;
         }
     }
 }

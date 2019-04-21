@@ -6,6 +6,26 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
+    public struct QuestReturn
+    {
+        public bool Null;
+        public QuestStatus Status;
+        public int Quest_ID;
+        public int NPC_ID;
+        public string Title;
+        public string Text;
+        public int Target;
+        public QuestReturn(bool _Null, QuestStatus status, int quest_ID, int npc_ID, string title, string text, int target)
+        {
+            Null = _Null;
+            Status = status;
+            Quest_ID = quest_ID;
+            NPC_ID = npc_ID;
+            Title = title;
+            Text = text;
+            Target = target;
+        }
+    }
     class Quest
     {
         #region General
@@ -99,12 +119,31 @@ namespace Project_X_Game_Server
     }
     public enum QuestStatus
     {
+        None,
         InProgress,
         Complete,
-        Finished
+        Finished,
+        Available
     }
     class Quest_Log
     {
+        private int quest_Log_ID;
+        public int Quest_Log_ID
+        {
+            get
+            {
+                return quest_Log_ID;
+
+            }
+        }
+        private int character_ID;
+        public int Character_ID
+        {
+            get
+            {
+                return character_ID;
+            }
+        }
         private int quest_ID = 0;
         public int Quest_ID
         {
@@ -148,11 +187,13 @@ namespace Project_X_Game_Server
 
         public bool Changed = false;
 
-        public Quest_Log(int Character_ID, int Quest_ID)
+        public Quest_Log(int Quest_Log_ID, int Character_ID, int Quest_ID, QuestStatus Status, int Progress)
         {
-            status = QuestStatus.InProgress;
+            quest_Log_ID = Quest_Log_ID;
+            character_ID = Character_ID;
             quest_ID = Quest_ID;
-            objectiveProgress = 0;
+            status = Status;
+            objectiveProgress = Progress;
         }
 
         public void Increment(int Character_ID)

@@ -156,7 +156,7 @@ namespace Project_X_Login_Server
         {
             for (int i = 0; i < Clients.Length; i++)
             {
-                if (Clients[i].IP.Substring(0, Clients[i].IP.IndexOf(':')) == ip)
+                if (Clients[i].Connected && Clients[i].IP.Length > 1 && Clients[i].IP.Substring(0, Clients[i].IP.IndexOf(':')) == ip)
                 {
                     return i;
                 }

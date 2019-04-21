@@ -245,7 +245,7 @@ namespace Project_X_Synchronization_Server
                     Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"), reader.GetInt32("Gender"),
                         reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
                         reader.GetFloat("Camera_Pos_X"), reader.GetFloat("Camera_Pos_Y"), reader.GetFloat("Camera_Pos_Z"), reader.GetFloat("Camera_Rotation_Y"), 
-                        reader.GetInt32("Health"), reader.GetInt32("Strength"), reader.GetInt32("Agility")));
+                        reader.GetInt32("Health"), reader.GetInt32("Strength"), reader.GetInt32("Agility"), reader.GetInt32("Experience")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -377,6 +377,30 @@ namespace Project_X_Synchronization_Server
                     else
                     {
                         Log.log(SubLineNumber, "Downloading data from tbl_Spawn_Positions, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Experience
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Experience into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Experience;");
+                reader = QueryDatabase("SELECT * FROM tbl_Experience;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Experience.Add(reader.GetInt32("XP_ID"), new _Experience(reader.GetInt32("XP_ID"), reader.GetInt32("Level"), reader.GetInt32("Experience"),
+                        reader.GetInt32("Strength"), reader.GetInt32("Agility"), reader.GetInt32("HP")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Experience, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Experience, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
                             ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
                     }
                 }
