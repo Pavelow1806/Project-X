@@ -28,7 +28,8 @@ namespace Project_X_Synchronization_Server
     {
         Invalid,
         AuthenticateGameServer,
-        WorldRequest
+        WorldRequest,
+        NewQuestLog
     }
     public enum SyncServerTable
     {
@@ -287,6 +288,24 @@ namespace Project_X_Synchronization_Server
             catch (Exception e)
             {
                 Log.log("Building World update packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+        public static void NewQuestLog(_Quest_Log ql)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                Log.log("Sending New Quest Log response.", Log.LogType.SENT);
+                BuildBasePacket((int)GameServerSendPacketNumbers.NewQuestLog, ref buffer);
+                buffer.WriteInteger(ql.Character_ID);
+                buffer.WriteInteger(ql.Quest_ID);
+                buffer.WriteInteger(ql.Log_ID);
+                sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.NewQuestLog.ToString(), buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building New Quest Log packet failed. > " + e.Message, Log.LogType.ERROR);
                 return;
             }
         }

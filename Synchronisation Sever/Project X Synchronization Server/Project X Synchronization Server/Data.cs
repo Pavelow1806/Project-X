@@ -753,6 +753,10 @@ namespace Project_X_Synchronization_Server
             {
                 return log_ID;
             }
+            set
+            {
+                log_ID = value;
+            }
         }
         private int character_ID;
         public int Character_ID

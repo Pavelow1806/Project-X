@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
-    class AnimationState
+    public class AnimationState
     {
         private float _Forward = 0.0f;
         public float Forward

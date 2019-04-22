@@ -102,7 +102,7 @@ namespace Project_X_Synchronization_Server
                             {
                                 if (SecondsUntilSynchronization == 0)
                                 {
-                                    Log.log(LineNumber, "Starting data synchronization..", Log.LogType.SYNC);
+                                    LineNumber = Log.log("Starting data synchronization..", Log.LogType.SYNC);
                                 }
                                 else
                                 {

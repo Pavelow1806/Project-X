@@ -25,7 +25,8 @@ namespace Project_X_Synchronization_Server
         AuthenticateServer,
         WorldRequest,
         UpdatePlayerData,
-        UpdateQuestLog
+        UpdateQuestLog,
+        CreateQuestLog
     }
     public enum SyncServerProcessPacketNumbers
     {
@@ -149,8 +150,23 @@ namespace Project_X_Synchronization_Server
             }
             else
             {
-                //Data.tbl_Quest_Log.Add()
+                ql = new _Quest_Log(-1, Character_ID, Quest_ID, Quest_Status, 0);
+                ql.Log_ID = Database.instance.Insert_Record("CALL CreateQuestLog(" + Quest_ID + ", " + Character_ID + ", 0, " + Quest_Status + ");");
+                Data.tbl_Quest_Log.Add(ql.Log_ID, ql);
             }
+        }
+        private static void CreateQuestLog(ConnectionType type, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Quest_ID = buffer.ReadInteger();
+            int Character_ID = buffer.ReadInteger();
+            int Progress = buffer.ReadInteger();
+            int Status = buffer.ReadInteger();
+            int Log_ID = Database.instance.Insert_Record("CALL CreateQuestLog(" + Quest_ID + ", " + Character_ID + ", 0, " + Status + ");");
+            Data.tbl_Quest_Log.Add(Log_ID, new _Quest_Log(Log_ID, Character_ID, Quest_ID, Status, Progress));
+            SendData.NewQuestLog(Data.tbl_Quest_Log[Log_ID]);
         }
         #endregion
 

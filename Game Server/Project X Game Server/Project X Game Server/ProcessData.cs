@@ -30,7 +30,8 @@ namespace Project_X_Game_Server
     {
         Invalid,
         AuthenticateServer,
-        WorldRequest
+        WorldRequest,
+        NewQuestLog
     }
     public enum SyncServerTable
     {
@@ -267,9 +268,9 @@ namespace Project_X_Game_Server
                         for (int i = 0; i < Quest_Log_Count; i++)
                         {
                             int Quest_Log_ID = buffer.ReadInteger();
-                            if (!World.instance.quest_log.ContainsKey(Quest_Log_ID))
+                            if (!World.instance.ContainsLog(Quest_Log_ID))
                             {
-                                World.instance.quest_log.Add(Quest_Log_ID, new Quest_Log(Quest_Log_ID, buffer.ReadInteger(), buffer.ReadInteger(), (QuestStatus)buffer.ReadInteger(), buffer.ReadInteger()));
+                                World.instance.quest_log.Add(new Quest_Log(Quest_Log_ID, buffer.ReadInteger(), buffer.ReadInteger(), (QuestStatus)buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added log " + i.ToString() + "/" + Quest_Log_Count.ToString(), Log.LogType.RECEIVED);
                         }
@@ -278,7 +279,7 @@ namespace Project_X_Game_Server
                         break;
                     case SyncServerTable.tbl_Experience:
                         // tbl_Experience
-                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Quest_Log..", Log.LogType.RECEIVED);
+                        LineNumber = Log.log("Processing world request packet.. Adding data from tbl_Experience..", Log.LogType.RECEIVED);
                         int Experience_Count = buffer.ReadInteger();
                         for (int i = 0; i < Experience_Count; i++)
                         {
@@ -287,16 +288,27 @@ namespace Project_X_Game_Server
                             {
                                 World.instance.experience_levels.Add(XP_ID, new Experience(XP_ID, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
-                            Log.log(LineNumber, "Processing world request packet.. Added log " + i.ToString() + "/" + Experience_Count.ToString(), Log.LogType.RECEIVED);
+                            Log.log(LineNumber, "Processing world request packet.. Added experience " + i.ToString() + "/" + Experience_Count.ToString(), Log.LogType.RECEIVED);
                         }
                         World.instance.ReceivedExperience = true;
-                        Log.log(LineNumber, "Sucessfully added logs (" + Experience_Count.ToString() + ")", Log.LogType.SUCCESS);
+                        Log.log(LineNumber, "Sucessfully added experiences (" + Experience_Count.ToString() + ")", Log.LogType.SUCCESS);
                         break;
                     default:
                         break;
                 }
                 World.instance.Initialise();
             }
+        }
+        private static void NewQuestLog(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            int Quest_ID = buffer.ReadInteger();
+            int Quest_Log_ID = buffer.ReadInteger();
+            Quest_Log ql = World.instance.GetQuestLog(Character_ID, Quest_ID);
+            if (ql != null) ql.Quest_Log_ID = Quest_Log_ID;
         }
         #endregion
 
@@ -326,87 +338,90 @@ namespace Project_X_Game_Server
         private static void Update(ConnectionType type, int index, byte[] data)
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-            buffer.WriteBytes(data);
-            ReadHeader(ref buffer);
-            // ID
-            int Character_ID = buffer.ReadInteger();
-            // Position
-            float X = buffer.ReadFloat();
-            float Y = buffer.ReadFloat();
-            float Z = buffer.ReadFloat();
-            float R = buffer.ReadFloat();
-            // Velocity
-            float vx = buffer.ReadFloat();
-            float vy = buffer.ReadFloat();
-            float vz = buffer.ReadFloat();
-            // Camera Position
-            float cX = buffer.ReadFloat();
-            float cY = buffer.ReadFloat();
-            float cZ = buffer.ReadFloat();
-            float cR = buffer.ReadFloat();
-            // Animation State
-            float Forward = buffer.ReadFloat();
-            float Turn = buffer.ReadFloat();
-            float Jump = buffer.ReadFloat();
-            float JumpLeg = buffer.ReadFloat();
-            byte bools = buffer.ReadByte();
-            bool Crouch = false;
-            bool OnGround = false;
-            bool Attacking = false;
-            bool Dead = false;
-            bool Attacked = false;
-            bool Cast = false;
-            bool b6 = false; // Unused
-            bool b7 = false; // Unused
-            BitwiseRefinement.ByteToBools(bools, out Crouch, out OnGround, out Attacking, out Dead, out Attacked, out Cast, out b6, out b7);
-            // Target
-            EntityType TargetType = (EntityType)buffer.ReadInteger();
-            int TargetID = buffer.ReadInteger();
-            
-            Player player = World.instance.players[Character_ID];
-            // Position
-            player.x = X;
-            player.y = Y;
-            player.z = Z;
-            player.r = R;
-            // Velocity
-            player.vx = vx;
-            player.vy = vy;
-            player.vz = vz;
-            // Camera Position and Rotation
-            player.Camera_Pos_X = cX;
-            player.Camera_Pos_Y = cY;
-            player.Camera_Pos_Z = cZ;
-            player.Camera_Rotation_Y = cR;
-            // Animations
-            player.AnimState.Forward = Forward;
-            player.AnimState.Turn = Turn;
-            player.AnimState.Jump = Jump;
-            player.AnimState.JumpLeg = JumpLeg;
-            player.AnimState.Crouch = Crouch;
-            player.AnimState.OnGround = OnGround;
-            player.AnimState.Attacking = Attacking;
-            player.AnimState.Dead = Dead;
-            player.AnimState.Attacked = Attacked;
-            player.AnimState.Cast = Cast;
-            // Target
-            player.TargetType = (int)TargetType;
-            player.TargetID = TargetID;
-
-            if (LineNumber == 0)
+            if (data.Length == 81)
             {
-                LineNumber = Log.log("Received update from player: " + Character_ID.ToString() + 
-                    " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() + 
-                    " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
-            }
-            else
-            {
-                Log.log(LineNumber, "Received update from player: " + Character_ID.ToString() +
-                    " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
-                    " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
-            }
+                buffer.WriteBytes(data);
+                ReadHeader(ref buffer);
+                // ID
+                int Character_ID = buffer.ReadInteger();
+                // Position
+                float X = buffer.ReadFloat();
+                float Y = buffer.ReadFloat();
+                float Z = buffer.ReadFloat();
+                float R = buffer.ReadFloat();
+                // Velocity
+                float vx = buffer.ReadFloat();
+                float vy = buffer.ReadFloat();
+                float vz = buffer.ReadFloat();
+                // Camera Position
+                float cX = buffer.ReadFloat();
+                float cY = buffer.ReadFloat();
+                float cZ = buffer.ReadFloat();
+                float cR = buffer.ReadFloat();
+                // Animation State
+                float Forward = buffer.ReadFloat();
+                float Turn = buffer.ReadFloat();
+                float Jump = buffer.ReadFloat();
+                float JumpLeg = buffer.ReadFloat();
+                byte bools = buffer.ReadByte();
+                bool Crouch = false;
+                bool OnGround = false;
+                bool Attacking = false;
+                bool Dead = false;
+                bool Attacked = false;
+                bool Cast = false;
+                bool b6 = false; // Unused
+                bool b7 = false; // Unused
+                BitwiseRefinement.ByteToBools(bools, out Crouch, out OnGround, out Attacking, out Dead, out Attacked, out Cast, out b6, out b7);
+                // Target
+                EntityType TargetType = (EntityType)buffer.ReadInteger();
+                int TargetID = buffer.ReadInteger();
 
-            SendData.UpdatePlayerData(player);
+                Player player = World.instance.players[Character_ID];
+                // Position
+                player.x = X;
+                player.y = Y;
+                player.z = Z;
+                player.r = R;
+                // Velocity
+                player.vx = vx;
+                player.vy = vy;
+                player.vz = vz;
+                // Camera Position and Rotation
+                player.Camera_Pos_X = cX;
+                player.Camera_Pos_Y = cY;
+                player.Camera_Pos_Z = cZ;
+                player.Camera_Rotation_Y = cR;
+                // Animations
+                player.AnimState.Forward = Forward;
+                player.AnimState.Turn = Turn;
+                player.AnimState.Jump = Jump;
+                player.AnimState.JumpLeg = JumpLeg;
+                player.AnimState.Crouch = Crouch;
+                player.AnimState.OnGround = OnGround;
+                player.AnimState.Attacking = Attacking;
+                player.AnimState.Dead = Dead;
+                player.AnimState.Attacked = Attacked;
+                player.AnimState.Cast = Cast;
+                // Target
+                player.TargetType = (int)TargetType;
+                player.TargetID = TargetID;
+
+                //if (LineNumber == 0)
+                //{
+                //    LineNumber = Log.log("Received update from player: " + Character_ID.ToString() +
+                //        " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
+                //        " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
+                //}
+                //else
+                //{
+                //    Log.log(LineNumber, "Received update from player: " + Character_ID.ToString() +
+                //        " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
+                //        " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
+                //}
+
+                SendData.UpdatePlayerData(player);
+            }
         }
         private static void RequestQuest(ConnectionType type, int index, byte[] data)
         {
@@ -415,7 +430,94 @@ namespace Project_X_Game_Server
             ReadHeader(ref buffer);
             int Character_ID = buffer.ReadInteger();
             int NPC_ID = buffer.ReadInteger();
-
+            Log.log("Quest details requested, distance: " + MathF.Distance(World.instance.players[Character_ID], World.instance.GetNPCByEntityID(NPC_ID)));
+            if (MathF.Distance(World.instance.players[Character_ID], World.instance.GetNPCByEntityID(NPC_ID)) <= World.InteractionDistance)
+            {
+                bool Create = false;
+                QuestReturn qr = World.instance.GetQuestContentByNPC(Character_ID, NPC_ID, out Create);
+                Quest_Log ql = null;
+                if (Create)
+                {
+                    ql = new Quest_Log(-1, Character_ID, qr.Quest_ID, QuestStatus.Available, 0);
+                    World.instance.quest_log.Add(ql);
+                    SendData.CreateQuestLog(ql);
+                }
+                else
+                {
+                    ql = World.instance.GetQuestLog(Character_ID, qr.Quest_ID);
+                }
+                SendData.QuestReturn(index, qr, ql.Quest_Log_ID);
+            }
+        }
+        private static void QuestInteract(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            int NPC_ID = buffer.ReadInteger();
+            if (MathF.Distance(World.instance.players[Character_ID], World.instance.GetNPCByEntityID(NPC_ID)) <= World.InteractionDistance)
+            {
+                bool Create = false;
+                QuestReturn qr = World.instance.GetQuestContentByNPC(Character_ID, NPC_ID, out Create);
+                Quest_Log ql = null;
+                if (Create)
+                {
+                    ql = new Quest_Log(-1, Character_ID, qr.Quest_ID, QuestStatus.Available, 0);
+                    World.instance.quest_log.Add(ql);
+                    SendData.CreateQuestLog(ql);
+                }
+                else
+                {
+                    ql = World.instance.GetQuestLog(Character_ID, qr.Quest_ID);
+                }
+                if (qr.Null != true && ql != null)
+                {
+                    switch (qr.Status)
+                    {
+                        case QuestStatus.None:
+                            break;
+                        case QuestStatus.InProgress:
+                            if (ql.ObjectiveProgress >= qr.Target)
+                            {
+                                World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Finished;
+                                SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                                SendData.UpdateQuestLog(ql);
+                            }
+                            else
+                            {
+                                SendData.QuestInteractConfirm(index, false);
+                            }
+                            break;
+                        case QuestStatus.Complete:
+                            SendData.QuestInteractConfirm(index, false);
+                            break;
+                        case QuestStatus.Finished:
+                            World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Complete;
+                            SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                            SendData.UpdateQuestLog(ql);
+                            break;
+                        case QuestStatus.Available:
+                            if (qr.Target == -1)
+                            { World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Finished; }
+                            else
+                            { World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.InProgress; }
+                            SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                            SendData.UpdateQuestLog(ql);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    SendData.QuestInteractConfirm(index, false);
+                }
+            }
+            else
+            {
+                SendData.QuestInteractConfirm(index, false);
+            }
         }
         #endregion
     }

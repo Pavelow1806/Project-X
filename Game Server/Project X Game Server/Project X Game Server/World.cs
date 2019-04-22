@@ -13,7 +13,8 @@ namespace Project_X_Game_Server
 
         public bool Running = false;
         private Thread UpdateThread;
-        public static float GlobalAttackSpeed = 1.0f;
+        public static float GlobalAttackSpeed = 2.0f;
+        public static float InteractionDistance = 15.0f;
         private int entityCounter = 0;
         public int EntityCounter
         {
@@ -42,7 +43,7 @@ namespace Project_X_Game_Server
         public Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
         public bool ReceivedQuests = false;
 
-        public Dictionary<int, Quest_Log> quest_log = new Dictionary<int, Quest_Log>();
+        public List<Quest_Log> quest_log = new List<Quest_Log>();
         public bool ReceivedQuestLogs = false;
 
         public Dictionary<int, Experience> experience_levels = new Dictionary<int, Experience>();
@@ -175,11 +176,11 @@ namespace Project_X_Game_Server
         public List<Quest_Log> GetQuestLog(int Character_ID)
         {
             List<Quest_Log> result = new List<Quest_Log>();
-            foreach (KeyValuePair<int, Quest_Log> ql in quest_log)
+            foreach (Quest_Log ql in quest_log)
             {
-                if (ql.Value.Character_ID == Character_ID)
+                if (ql.Character_ID == Character_ID)
                 {
-                    result.Add(ql.Value);
+                    result.Add(ql);
                 }
             }
             return result;
@@ -188,13 +189,13 @@ namespace Project_X_Game_Server
         {
             List<Quest> result = new List<Quest>();
             int MaxCompletedQuestID = 0;
-            foreach (KeyValuePair<int, Quest_Log> ql in quest_log)
+            foreach (Quest_Log ql in quest_log)
             {
-                if (ql.Value.Character_ID == Character_ID && 
-                    ql.Value.Status == QuestStatus.Complete && 
-                    ql.Value.Quest_ID > MaxCompletedQuestID)
+                if (ql.Character_ID == Character_ID && 
+                    ql.Status == QuestStatus.Complete && 
+                    ql.Quest_ID > MaxCompletedQuestID)
                 {
-                    MaxCompletedQuestID = ql.Value.Quest_ID;
+                    MaxCompletedQuestID = ql.Quest_ID;
                 }
             }
             if (MaxCompletedQuestID == 0)
@@ -215,14 +216,25 @@ namespace Project_X_Game_Server
         }
         public NPC GetNPCByEntityID(int Entity_ID)
         {
-            foreach (KeyValuePair<int, NPC> npc in NPCs)
+            foreach (NPC npc in NPCsInWorld)
             {
-                if (npc.Value.Entity_ID == Entity_ID)
+                if (npc.Entity_ID == Entity_ID)
                 {
-                    return npc.Value;
+                    return npc;
                 }
             }
             return null;
+        }
+        public int GetNPCEntityID(int NPC_ID)
+        {
+            foreach (NPC npc in NPCsInWorld)
+            {
+                if (npc.NPC_ID == NPC_ID)
+                {
+                    return npc.Entity_ID;
+                }
+            }
+            return -1;
         }
         public QuestStatus GetQuestStateByNPC(int Character_ID, int NPC_ID)
         {
@@ -236,11 +248,11 @@ namespace Project_X_Game_Server
                 }
             }
             List<Quest_Log> Character_Quest_Log = new List<Quest_Log>();
-            foreach (KeyValuePair<int, Quest_Log> questlog in quest_log)
+            foreach (Quest_Log questlog in quest_log)
             {
-                if (questlog.Value.Character_ID == Character_ID)
+                if (questlog.Character_ID == Character_ID)
                 {
-                    Character_Quest_Log.Add(questlog.Value);
+                    Character_Quest_Log.Add(questlog);
                 }
             }
             QuestStatus result = QuestStatus.None;
@@ -282,42 +294,90 @@ namespace Project_X_Game_Server
             }
             return result;
         }
-        public QuestReturn GetQuestContentByNPC(int Character_ID, int NPC_ID)
+        public List<Quest> GetNPCQuests(int NPC_ID)
         {
-            List<Quest> NPCQuests = new List<Quest>();
+            List<Quest> result = new List<Quest>();
             foreach (KeyValuePair<int, Quest> q in quests)
             {
-                if (q.Value.NPC_Start_ID == NPC_ID || q.Value.NPC_End_ID == NPC_ID)
+                if (q.Value.NPC_End_ID == NPC_ID || q.Value.NPC_Start_ID == NPC_ID)
                 {
-                    NPCQuests.Add(q.Value);
+                    result.Add(q.Value);
                 }
             }
-            foreach (Quest qu in NPCQuests)
+            return result;
+        }
+        public QuestReturn GetQuestContentByNPC(int Character_ID, int NPC_Entity_ID, out bool Create)
+        {
+            QuestReturn result = new QuestReturn(true, QuestStatus.None, -1, -1, "", "", -1);
+            NPC Subject = GetNPCByEntityID(NPC_Entity_ID);
+            List<Quest> NPCQuests = GetNPCQuests(Subject.NPC_ID);
+            // Check whether any of the quests have data in the log
+            foreach (Quest_Log ql in quest_log)
             {
-                foreach (KeyValuePair<int, Quest_Log> ql in quest_log)
+                if (quests[ql.Quest_ID].NPC_Start_ID == Subject.NPC_ID || quests[ql.Quest_ID].NPC_End_ID == Subject.NPC_ID)
                 {
-                    if (qu.ID == ql.Value.Quest_ID)
+                    result.Null = false;
+                    result.Status = ql.Status;
+                    result.Quest_ID = ql.Quest_ID;
+                    result.NPC_ID = Subject.Entity_ID;
+                    result.Title = quests[ql.Quest_ID].Title;
+                    if (quests[ql.Quest_ID].NPC_Start_ID == Subject.NPC_ID)
                     {
-                        if (ql.Value.Status == QuestStatus.Available)
-                        {
-                            return new QuestReturn(false, ql.Value.Status, qu.ID, qu.NPC_Start_ID, qu.Title, qu.Start_Text, qu.Objective_Target);
-                        }
-                        else if (ql.Value.Status == QuestStatus.Finished)
-                        {
-                            return new QuestReturn(false, ql.Value.Status, qu.ID, qu.NPC_End_ID, qu.Title, qu.End_Text, qu.Objective_Target);
-                        }
+                        result.Text = quests[ql.Quest_ID].Start_Text;
                     }
+                    else
+                    {
+                        result.Text = quests[ql.Quest_ID].End_Text;
+                    }
+                    result.Target = quests[ql.Quest_ID].Objective_Target;
+                    Create = false;
+                    return result;
                 }
             }
-            return new QuestReturn(true, QuestStatus.None, -1, -1, "", "", -1);
+            List<Quest> AvailableQuests = GetAvailableQuests(Character_ID);
+            foreach (Quest q in AvailableQuests)
+            {
+                if (q.NPC_Start_ID == Subject.NPC_ID)
+                {
+                    result.Null = false;
+                    result.Status = QuestStatus.Available;
+                    result.Quest_ID = q.ID;
+                    result.NPC_ID = Subject.Entity_ID;
+                    result.Title = quests[q.ID].Title;
+                    if (quests[q.ID].NPC_Start_ID == Subject.NPC_ID)
+                    {
+                        result.Text = quests[q.ID].Start_Text;
+                    }
+                    else
+                    {
+                        result.Text = quests[q.ID].End_Text;
+                    }
+                    result.Target = quests[q.ID].Objective_Target;
+                    Create = true;
+                    return result;
+                }
+            }
+            Create = false;
+            return result;
+        }
+        public bool ContainsLog(int LogID)
+        {
+            foreach (Quest_Log ql in quest_log)
+            {
+                if (ql.Quest_Log_ID == LogID)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
         public Quest_Log GetQuestLog(int Character_ID, int Quest_ID)
         {
-            foreach (KeyValuePair<int, Quest_Log> ql in quest_log)
+            foreach (Quest_Log ql in quest_log)
             {
-                if (ql.Value.Quest_ID == Quest_ID && ql.Value.Character_ID == Character_ID)
+                if (ql.Quest_ID == Quest_ID && ql.Character_ID == Character_ID)
                 {
-                    return ql.Value;
+                    return ql;
                 }
             }
             return null;

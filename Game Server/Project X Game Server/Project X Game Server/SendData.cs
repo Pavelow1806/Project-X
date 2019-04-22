@@ -15,7 +15,8 @@ namespace Project_X_Game_Server
         WorldPacket,
         CharacterDetails,
         PlayerStateChange,
-        QuestReturn
+        QuestReturn,
+        QuestInteractConfirm
     }
     public enum ServerSendPacketNumbers
     {
@@ -34,7 +35,8 @@ namespace Project_X_Game_Server
         AuthenticateSyncServer,
         WorldRequest,
         UpdatePlayerData,
-        UpdateQuestLog
+        UpdateQuestLog,
+        CreateQuestLog
     }
     public enum PlayerState
     {
@@ -174,20 +176,40 @@ namespace Project_X_Game_Server
                 return;
             }
         }
-        public static void UpdateQuestLog(Quest_Log ql, int Character_ID)
+        public static void UpdateQuestLog(Quest_Log ql)
         {
             try
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)SyncServerSendPacketNumbers.UpdateQuestLog, ref buffer);
                 buffer.WriteInteger(ql.Quest_ID);
-                buffer.WriteInteger(Character_ID);
+                buffer.WriteInteger(ql.Character_ID);
                 buffer.WriteInteger(ql.ObjectiveProgress);
                 buffer.WriteInteger((int)ql.Status);
+
+                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.UpdatePlayerData.ToString(), -1, buffer.ToArray());
             }
             catch (Exception e)
             {
                 Log.log("Building Update Quest Log packet failed. > " + e.Message, Log.LogType.ERROR);
+            }
+        }
+        public static void CreateQuestLog(Quest_Log ql)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)SyncServerSendPacketNumbers.CreateQuestLog, ref buffer);
+                buffer.WriteInteger(ql.Quest_ID);
+                buffer.WriteInteger(ql.Character_ID);
+                buffer.WriteInteger(ql.ObjectiveProgress);
+                buffer.WriteInteger((int)ql.Status);
+
+                sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.UpdatePlayerData.ToString(), -1, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Create Quest Log packet failed. > " + e.Message, Log.LogType.ERROR);
             }
         }
         #endregion
@@ -243,6 +265,28 @@ namespace Project_X_Game_Server
                     buffer.WriteFloat(npc.z);
                     buffer.WriteFloat(npc.r);
                     buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
+                    bool Create = false;
+                    QuestReturn qr = World.instance.GetQuestContentByNPC(Network.instance.Clients[index].Character_ID, npc.Entity_ID, out Create);
+                    Quest_Log ql = null;
+                    if (Create)
+                    {
+                        ql = new Quest_Log(-1, Network.instance.Clients[index].Character_ID, qr.Quest_ID, QuestStatus.Available, 0);
+                        World.instance.quest_log.Add(ql);
+                        SendData.CreateQuestLog(ql);
+                    }
+                    else
+                    {
+                        ql = World.instance.GetQuestLog(Network.instance.Clients[index].Character_ID, qr.Quest_ID);
+                    }
+                    buffer.WriteInteger(qr.Quest_ID);
+                    if (qr.Null)
+                    {
+                        buffer.WriteInteger(-1);
+                    }
+                    else
+                    {
+                        buffer.WriteInteger(ql.Quest_Log_ID);
+                    }
                 }
                 // Collectables
                 buffer.WriteInteger(World.instance.collectablesInWorld.Count);
@@ -364,7 +408,7 @@ namespace Project_X_Game_Server
                 return;
             }
         }
-        public static void QuestReturn(int index, QuestReturn qr)
+        public static void QuestReturn(int index, QuestReturn qr, int quest_Log_ID)
         {
             try
             {
@@ -379,6 +423,7 @@ namespace Project_X_Game_Server
                     buffer.WriteByte(0);
                     buffer.WriteInteger((int)qr.Status);
                     buffer.WriteInteger(qr.Quest_ID);
+                    buffer.WriteInteger(quest_Log_ID);
                     buffer.WriteInteger(qr.NPC_ID);
                     buffer.WriteString(qr.Title);
                     buffer.WriteString(qr.Text);
@@ -393,6 +438,24 @@ namespace Project_X_Game_Server
                 return;
             }
         }
+        public static void QuestInteractConfirm(int index, bool Confirmed, int Quest_ID = -1)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.QuestInteractConfirm, ref buffer);
+                buffer.WriteByte((Confirmed) ? (byte)1 : (byte)0);
+                buffer.WriteInteger(Quest_ID);
+                Log.log("Sending Quest Confirmation packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.QuestInteractConfirm.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Quest Confirmation packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+
         public static void SendUDP_WorldUpdate(int index)
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();

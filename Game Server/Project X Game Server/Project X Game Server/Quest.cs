@@ -101,8 +101,23 @@ namespace Project_X_Game_Server
                 return start_Requirement_Quest_ID;
             }
         }
+        private int item_Objective_ID = -1;
+        public int Item_Objective_ID
+        {
+            get
+            {
+                return item_Objective_ID;
+            }
+        }
+        private int npc_Objective_ID = -1;
+        public int NPC_Objective_ID
+        {
+            get
+            {
+                return npc_Objective_ID;
+            }
+        }
         #endregion
-
 
         protected bool Changed = false;
 
@@ -113,8 +128,16 @@ namespace Project_X_Game_Server
             int Item_objective_id, int Npc_objective_id)
         {
             iD = id;
-            title = title;
-
+            title = Title;
+            start_Text = Start_text;
+            end_Text = End_text;
+            reward = Reward;
+            nPC_Start_ID = Npc_start_id;
+            nPC_End_ID = Npc_end_id;
+            objective_Target = Objective_target;
+            start_Requirement_Quest_ID = Start_requirement_quest_id;
+            item_Objective_ID = Item_objective_id;
+            npc_Objective_ID = Npc_objective_id;
         }
     }
     public enum QuestStatus
@@ -133,7 +156,10 @@ namespace Project_X_Game_Server
             get
             {
                 return quest_Log_ID;
-
+            }
+            set
+            {
+                quest_Log_ID = value;
             }
         }
         private int character_ID;
