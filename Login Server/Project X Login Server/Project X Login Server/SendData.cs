@@ -12,19 +12,22 @@ namespace Project_X_Login_Server
         LoginResponse,
         RegistrationResponse,
         CharacterList,
-        ConfirmWhiteList
+        ConfirmWhiteList,
+        CreateCharacterResponse
     }
     public enum GameServerSendPacketNumbers
     {
         Invalid,
         AuthenticateServer,
-        WhiteList
+        WhiteList,
+        CreateCharacterResponse
     }
     public enum SyncServerSendPacketNumbers
     {
         Invalid,
         AuthenticateServer,
-        RegistrationNotification
+        RegistrationNotification,
+        CreateCharacterResponse
     }
     class SendData
     {
@@ -125,6 +128,7 @@ namespace Project_X_Login_Server
                     {
                         buffer.WriteString(c.Name);
                         buffer.WriteInteger(c.Level);
+                        buffer.WriteInteger(c.Gender);
                     }
                 }
                 sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.CharacterList, index, buffer.ToArray());
@@ -132,6 +136,42 @@ namespace Project_X_Login_Server
             catch (Exception e)
             {
                 Log.log("Building Character List packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+        public static void CreateCharacterResponse(int index, int Character_ID, string Name, int Gender)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.CreateCharacterResponse, ref buffer);
+                buffer.WriteInteger(Character_ID);
+                buffer.WriteString(Name);
+                buffer.WriteInteger(Gender);
+                sendData(ConnectionType.CLIENT, (int)ClientSendPacketNumbers.CreateCharacterResponse, index, buffer.ToArray());
+
+
+                if (Character_ID > 0)
+                {
+                    buffer = new ByteBuffer.ByteBuffer();
+                    BuildBasePacket((int)GameServerSendPacketNumbers.CreateCharacterResponse, ref buffer);
+                    buffer.WriteInteger(Character_ID);
+                    buffer.WriteString(Name);
+                    buffer.WriteInteger(Gender);
+                    sendData(ConnectionType.GAMESERVER, (int)GameServerSendPacketNumbers.CreateCharacterResponse, index, buffer.ToArray());
+
+                    buffer = new ByteBuffer.ByteBuffer();
+                    BuildBasePacket((int)SyncServerSendPacketNumbers.CreateCharacterResponse, ref buffer);
+                    buffer.WriteInteger(Character_ID);
+                    buffer.WriteString(Name);
+                    buffer.WriteInteger(Gender);
+                    buffer.WriteString(Network.instance.Clients[index].Username);
+                    sendData(ConnectionType.SYNCSERVER, (int)SyncServerSendPacketNumbers.CreateCharacterResponse, index, buffer.ToArray());
+                }
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Create Character Response failed. > " + e.Message, Log.LogType.ERROR);
                 return;
             }
         }

@@ -168,8 +168,8 @@ namespace Project_X_Game_Server
                 }
             }
         }
-        private int _TargetType = -1;
-        public int TargetType
+        private EntityType _TargetType = EntityType.NONE;
+        public EntityType TargetType
         {
             get
             {
@@ -241,6 +241,24 @@ namespace Project_X_Game_Server
             }
         }
 
+        private bool inCombat = false;
+        public bool InCombat
+        {
+            get
+            {
+                return inCombat;
+            }
+            set
+            {
+                if (inCombat != value)
+                {
+                    Changed = true;
+                    inCombat = value;
+                }
+            }
+        }
+
+        public DateTime NextAttack = default(DateTime);
 
         public AnimationState AnimState = new AnimationState();
 
@@ -264,6 +282,8 @@ namespace Project_X_Game_Server
             _vz = vZ;
             max_HP = HP;
             current_HP = HP;
+            strength = Strength;
+            agility = Agility;
         }
 
         protected virtual void BuildTransmission(out byte[] data)
@@ -311,8 +331,9 @@ namespace Project_X_Game_Server
                 default:
                     break;
             }
-            buffer.WriteInteger(_TargetType);
+            buffer.WriteInteger((int)_TargetType);
             buffer.WriteInteger(_TargetID);
+            buffer.WriteByte(inCombat ? (byte)1 : (byte)0);
             data = null;
         }
     }

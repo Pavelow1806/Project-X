@@ -10,11 +10,13 @@ namespace Project_X_Login_Server
     {
         public string Name = "";
         public int Level = 1;
+        public int Gender = 0;
 
-        public Character(string name, int level)
+        public Character(string name, int level, int gender)
         {
             Name = name;
             Level = level;
+            Gender = gender;
         }
     }
 }

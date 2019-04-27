@@ -64,8 +64,9 @@ namespace Project_X_Game_Server
         private DateTime NextSpawnTime = default(DateTime);
         public int Spawn_ID = -1;
 
-        public NPC(int ID, NPCStatus Status, string name, int respawn_Time, int level, Gender gender, int HP) :
-            base(ID, name, level, gender, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, HP, 100, 10)
+        public NPC(int ID, NPCStatus Status, string name, int respawn_Time, int level, Gender gender, int HP,
+            int Strength, int Agility) :
+            base(ID, name, level, gender, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, HP, Strength, Agility)
         {
             nPC_ID = ID;
             status = Status;

@@ -33,6 +33,7 @@ namespace Project_X_Game_Server
 
         private const int LoginServerPort = 5600;
         private const int SyncServerPort = 5602;
+        public const float SecondsBetweenPackets = 10.0f;
 
         public const int BufferSize = 4096;
         #endregion

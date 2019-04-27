@@ -12,7 +12,8 @@ namespace Project_X_Login_Server
         Invalid,
         LoginRequest,
         RegistrationRequest,
-        CharacterListRequest
+        CharacterListRequest,
+        CreateCharacter
     }
     public enum GameServerProcessPacketNumbers
     {
@@ -118,6 +119,7 @@ namespace Project_X_Login_Server
             {
                 case Response.SUCCESSFUL:
                     Network.instance.Clients[index].LoggedIn = true;
+                    Network.instance.Clients[index].Username = username;
                     SendData.LoginResponse(index, 1);
                     SendData.WhiteListConfirmation(Network.instance.Clients[index].IP);
                     break;
@@ -193,6 +195,16 @@ namespace Project_X_Login_Server
                 default:
                     break;
             }
+        }
+        private static void CreateCharacter(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            string Character_Name = buffer.ReadString();
+            int Gender = buffer.ReadInteger();
+            int Character_ID = Database.instance.CreateCharacter(Network.instance.Clients[index].Username, Character_Name, Gender);
+            SendData.CreateCharacterResponse(index, Character_ID, Character_Name, Gender);
         }
         #endregion
 

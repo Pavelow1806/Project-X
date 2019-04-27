@@ -159,6 +159,8 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(npc.Value.Level);
                     buffer.WriteInteger(npc.Value.Gender);
                     buffer.WriteInteger(npc.Value.HP);
+                    buffer.WriteInteger(npc.Value.Strength);
+                    buffer.WriteInteger(npc.Value.Agility);
                     Log.log(LineNumber, "Sending tbl_NPC.. NPC ID " + npc.Key.ToString() + "/" + Data.tbl_NPC.Count.ToString(), Log.LogType.SENT);
                 }
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());

@@ -318,7 +318,7 @@ namespace Project_X_Synchronization_Server
                 while (reader.Read())
                 {
                     Data.tbl_NPC.Add(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
-                        reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time")));
+                        reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time"), reader.GetInt32("Strength"), reader.GetInt32("Agility")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {

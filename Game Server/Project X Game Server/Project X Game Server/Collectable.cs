@@ -17,12 +17,18 @@ namespace Project_X_Game_Server
             }
         }
         public int Respawn_Time;
+        private bool PreviousActiveState = true;
         public bool Active
         {
             get
             {
-                if (NextSpawnTime > DateTime.Now)
+                if (DateTime.Now > NextSpawnTime)
                 {
+                    if (PreviousActiveState != true)
+                    {
+                        SendData.CollectableToggle(Entity_ID, true);
+                    }
+                    PreviousActiveState = true;
                     return true;
                 }
                 else
@@ -34,6 +40,11 @@ namespace Project_X_Game_Server
             {
                 if (value == false)
                 {
+                    if (PreviousActiveState != false)
+                    {
+                        SendData.CollectableToggle(Entity_ID, true);
+                    }
+                    PreviousActiveState = false;
                     NextSpawnTime = DateTime.Now.AddSeconds(Respawn_Time);
                 }
             }
@@ -44,6 +55,7 @@ namespace Project_X_Game_Server
         public Collectable(int ID, string name, int respawn_Time, float x, float y, float z, float r) : 
             base (ID, name, 0, Gender.NA, x,y,z,r,0,0,0,0,0,0)
         {
+            collectable_ID = ID;
             Respawn_Time = respawn_Time;
             NextSpawnTime = DateTime.Now;
         }

@@ -160,6 +160,17 @@ namespace Project_X_Synchronization_Server
             }
             return null;
         }
+        public static int GetAccountID(string Username)
+        {
+            foreach (KeyValuePair<int, _Accounts> acc in tbl_Accounts)
+            {
+                if (acc.Value.Username == Username)
+                {
+                    return acc.Value.Account_ID;
+                }
+            }
+            return -1;
+        }
     }
 
     class Record
@@ -893,9 +904,25 @@ namespace Project_X_Synchronization_Server
                 return respawn_Time;
             }
         }
+        private int strength;
+        public int Strength
+        {
+            get
+            {
+                return strength;
+            }
+        }
+        private int agility;
+        public int Agility
+        {
+            get
+            {
+                return agility;
+            }
+        }
 
         public _NPC(int NPC_ID, int Status, string Name, int Level,  
-            int HP, int Gender, int Respawn_Time)
+            int HP, int Gender, int Respawn_Time, int Strength, int Agility)
         {
             nPC_ID = NPC_ID;
             status = Status;
@@ -904,6 +931,8 @@ namespace Project_X_Synchronization_Server
             hP = HP;
             gender = Gender;
             respawn_Time = Respawn_Time;
+            strength = Strength;
+            agility = Agility;
             New = false;
         }
 

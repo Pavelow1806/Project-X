@@ -172,7 +172,8 @@ namespace Project_X_Login_Server
                             new Character
                             (
                                 reader.GetString("Character_Name"),
-                                reader.GetInt32("Character_Level")
+                                reader.GetInt32("Character_Level"),
+                                reader.GetInt32("Gender")
                             )
                         );
                     }
@@ -215,6 +216,32 @@ namespace Project_X_Login_Server
             else
             {
                 return Response.ERROR;
+            }
+        }
+
+        public int CreateCharacter(string Username, string Name, int Gender)
+        {
+            MySqlDataReader reader = QueryDatabase("CALL CreateCharacter('" + Username + "', '" + Name + "', " + Gender + ");");
+
+            if (reader != null)
+            {
+                if (reader.Read())
+                {
+                    int Character_ID = reader.GetInt32("Character_ID");
+                    reader.Close();
+                    reader = null;
+                    return Character_ID;
+                }
+                else
+                {
+                    reader.Close();
+                    reader = null;
+                    return -1;
+                }
+            }
+            else
+            {
+                return -1;
             }
         }
     }

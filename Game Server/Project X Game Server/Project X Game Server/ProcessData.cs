@@ -13,13 +13,17 @@ namespace Project_X_Game_Server
         EnterWorld,
         Update,
         RequestQuest,
-        QuestInteract
+        QuestInteract,
+        CollectableInteract,
+        Attack,
+        PacketReceived
     }
     public enum LoginServerProcessPacketNumbers
     {
         Invalid,
         AuthenticateServer,
-        WhiteList
+        WhiteList,
+        CreateCharacterResponse
     }
     public enum GameServerProcessPacketNumbers
     {
@@ -157,6 +161,17 @@ namespace Project_X_Game_Server
                 SendData.ConfirmWhiteList(ip.Substring(0, ip.IndexOf(':')));
             }
         }
+        private static void CreateCharacterResponse(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            string Name = buffer.ReadString();
+            Gender gender = (Gender)buffer.ReadInteger();
+            World.instance.players.Add(Character_ID, new Player(Character_ID, Name, 1, gender,
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100, 10, 10, 0));
+        }
         #endregion
 
         #region Synchronization Server Communication
@@ -204,7 +219,7 @@ namespace Project_X_Game_Server
                             if (!World.instance.NPCs.ContainsKey(NPC_ID))
                             {
                                 World.instance.NPCs.Add(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadInteger(),
-                                    (Gender)buffer.ReadInteger(), buffer.ReadInteger()));
+                                    (Gender)buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added NPC " + i.ToString() + "/" + NPC_Count.ToString(), Log.LogType.RECEIVED);
                         }
@@ -325,15 +340,6 @@ namespace Project_X_Game_Server
             player.InWorld = true;
             Network.instance.Clients[index].Character_ID = player.Character_ID;
             SendData.CharacterDetails(index, player);
-            for (int i = 0; i < Network.instance.Clients.Length; i++)
-            {
-                if (Network.instance.Clients[i] != null && Network.instance.Clients[i].Connected &&
-                    Network.instance.Clients[i].InGame())
-                {
-                    SendData.PlayerStateChange(i, player, PlayerState.Login);
-                }
-            }
-            SendData.WorldPacket(index);
         }
         private static void Update(ConnectionType type, int index, byte[] data)
         {
@@ -404,21 +410,8 @@ namespace Project_X_Game_Server
                 player.AnimState.Attacked = Attacked;
                 player.AnimState.Cast = Cast;
                 // Target
-                player.TargetType = (int)TargetType;
+                player.TargetType = TargetType;
                 player.TargetID = TargetID;
-
-                //if (LineNumber == 0)
-                //{
-                //    LineNumber = Log.log("Received update from player: " + Character_ID.ToString() +
-                //        " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
-                //        " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
-                //}
-                //else
-                //{
-                //    Log.log(LineNumber, "Received update from player: " + Character_ID.ToString() +
-                //        " x : " + X.ToString() + " y : " + Y.ToString() + " z : " + Z.ToString() + " r : " + R.ToString() +
-                //        " cx : " + cX.ToString() + " cy : " + cY.ToString() + " cz : " + cZ.ToString() + " cr : " + cR.ToString());
-                //}
 
                 SendData.UpdatePlayerData(player);
             }
@@ -430,7 +423,6 @@ namespace Project_X_Game_Server
             ReadHeader(ref buffer);
             int Character_ID = buffer.ReadInteger();
             int NPC_ID = buffer.ReadInteger();
-            Log.log("Quest details requested, distance: " + MathF.Distance(World.instance.players[Character_ID], World.instance.GetNPCByEntityID(NPC_ID)));
             if (MathF.Distance(World.instance.players[Character_ID], World.instance.GetNPCByEntityID(NPC_ID)) <= World.InteractionDistance)
             {
                 bool Create = false;
@@ -446,7 +438,8 @@ namespace Project_X_Game_Server
                 {
                     ql = World.instance.GetQuestLog(Character_ID, qr.Quest_ID);
                 }
-                SendData.QuestReturn(index, qr, ql.Quest_Log_ID);
+                if (ql != null)
+                    SendData.QuestReturn(index, qr, ql.Quest_Log_ID);
             }
         }
         private static void QuestInteract(ConnectionType type, int index, byte[] data)
@@ -481,7 +474,7 @@ namespace Project_X_Game_Server
                             if (ql.ObjectiveProgress >= qr.Target)
                             {
                                 World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Finished;
-                                SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                                SendData.QuestInteractConfirm(index, true, ql.Status, NPC_ID, ql.Quest_ID);
                                 SendData.UpdateQuestLog(ql);
                             }
                             else
@@ -494,15 +487,29 @@ namespace Project_X_Game_Server
                             break;
                         case QuestStatus.Finished:
                             World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Complete;
-                            SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                            SendData.QuestInteractConfirm(index, true, ql.Status, NPC_ID, ql.Quest_ID);
                             SendData.UpdateQuestLog(ql);
+                            // Get the next quest in the series
+                            List<Quest> q = World.instance.GetNextQuests(ql.Quest_ID);
+                            if (q != null && q.Count > 0)
+                            {
+                                foreach (Quest qu in q)
+                                {
+                                    // Create a new quest log for it
+                                    Quest_Log newql = new Quest_Log(-1, Character_ID, qu.ID, QuestStatus.Available, 0);
+                                    // Update the synchronization server
+                                    SendData.CreateQuestLog(newql);
+                                    // Notify the client that a new quest is available
+                                    SendData.UpdateQuestLog(index, qu.ID, newql.Quest_Log_ID, World.instance.GetNPCEntityID(qu.NPC_Start_ID), newql.Status, newql.ObjectiveProgress, qu.Objective_Target);
+                                }
+                            }
                             break;
                         case QuestStatus.Available:
                             if (qr.Target == -1)
                             { World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.Finished; }
                             else
                             { World.instance.GetQuestLog(Character_ID, qr.Quest_ID).Status = QuestStatus.InProgress; }
-                            SendData.QuestInteractConfirm(index, true, ql.Quest_ID);
+                            SendData.QuestInteractConfirm(index, true, ql.Status, NPC_ID, ql.Quest_ID);
                             SendData.UpdateQuestLog(ql);
                             break;
                         default:
@@ -519,13 +526,108 @@ namespace Project_X_Game_Server
                 SendData.QuestInteractConfirm(index, false);
             }
         }
+        private static void CollectableInteract(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            int Col_Entity_ID = buffer.ReadInteger();
+            Collectable col = World.instance.GetCollectableByEntityID(Col_Entity_ID);
+            if (col != null && col.Active && MathF.Distance(World.instance.players[Character_ID], col) <= World.InteractionDistance)
+            {
+                col.Active = false;
+                Quest_Log quest_Log = World.instance.GetQuest_Log(Character_ID, col.Collectable_ID);
+                if (quest_Log != null) quest_Log.Increment();
+                SendData.CollectableInteractConfirm(index, col, quest_Log);
+            }
+        }
+        private static void Attack(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            int Character_ID = buffer.ReadInteger();
+            int NPC_Entity_ID = buffer.ReadInteger();
+            Player player = World.instance.players[Character_ID];
+            NPC npc = World.instance.GetNPCByEntityID(NPC_Entity_ID);
+            if (player != null && npc != null)
+            {
+                if (MathF.Distance(player, npc) <= World.InteractionDistance && 
+                    (npc.Status == NPCStatus.AGGRESSIVE || npc.Status == NPCStatus.NEUTRAL || npc.Status == NPCStatus.BOSS) &&
+                    npc.Current_HP > 0)
+                {
+                    player.InCombat = true;
+                    npc.InCombat = true;
+                    npc.TargetType = EntityType.Player;
+                    npc.TargetID = Character_ID;
+                    npc.AnimState.Attacking = true;
+                    int Damage = MathF.Damage(player.Strength, player.Agility);
+                    npc.Current_HP -= Damage;
+                    player.AnimState.Attacking = true;
+                    SendData.AttackResponse(index, player.Character_ID, npc, Damage);
+                }
+            }
+        }
+        private static void PacketReceived(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            ClientSendPacketNumbers ReceivedPacket = (ClientSendPacketNumbers)buffer.ReadInteger();
+            switch (ReceivedPacket)
+            {
+                case ClientSendPacketNumbers.Invalid:
+                    break;
+                case ClientSendPacketNumbers.WorldPacket:
+                    break;
+                case ClientSendPacketNumbers.CharacterDetails:
+                    Player player = World.instance.players[Network.instance.Clients[index].Character_ID];
+                    for (int i = 0; i < Network.instance.Clients.Length; i++)
+                    {
+                        if (Network.instance.Clients[i] != null && Network.instance.Clients[i].Connected &&
+                            Network.instance.Clients[i].InGame())
+                        {
+                            SendData.PlayerStateChange(i, player, PlayerState.Login);
+                        }
+                    }
+                    break;
+                case ClientSendPacketNumbers.PlayerStateChange:
+                    SendData.WorldPacket(index);
+                    break;
+                case ClientSendPacketNumbers.QuestReturn:
+                    break;
+                case ClientSendPacketNumbers.QuestInteractConfirm:
+                    break;
+                case ClientSendPacketNumbers.CollectableInteractConfirm:
+                    break;
+                case ClientSendPacketNumbers.CollectableToggle:
+                    break;
+                case ClientSendPacketNumbers.AttackResponse:
+                    break;
+                default:
+                    break;
+            }
+        }
         #endregion
     }
     public class MathF
     {
         public static float Distance(Entity e1, Entity e2)
         {
+            if (e1 == null || e2 == null)
+            {
+                return 999.0f;
+            }
             return (float)Math.Sqrt((e2.x - e1.x) * (e2.x - e1.x) + (e2.x - e1.y) * (e2.y - e1.y) + (e2.z - e1.z) * (e2.z - e1.z));
+        }
+        public static int Damage(int Strength, int Agility)
+        {
+            Random random = new Random();
+
+            int RandDamage = random.Next((int)(Strength * 0.75f), (int)(Strength * 1.25f));
+            bool Crit = (random.Next(0, 1) == 1 ? true : false);
+            return (Crit ? (RandDamage) : (RandDamage * 2));
         }
     }
 }

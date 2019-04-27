@@ -17,7 +17,9 @@ namespace Project_X_Synchronization_Server
     public enum LoginServerProcessPacketNumbers
     {
         Invalid,
-        AuthenticateServer
+        AuthenticateServer,
+        RegistrationNotification,
+        CreateCharacterResponse
     }
     public enum GameServerProcessPacketNumbers
     {
@@ -170,8 +172,34 @@ namespace Project_X_Synchronization_Server
         }
         #endregion
 
-        #region Synchronization Server Communication
+        #region Login Server Communication
+        private static void RegistrationNotification(ConnectionType type, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
 
+            int Account_ID = buffer.ReadInteger();
+            string Username = buffer.ReadString();
+            string Password = buffer.ReadString();
+            string Email = buffer.ReadString();
+
+            Data.tbl_Accounts.Add(Account_ID, new _Accounts(Account_ID, Username, Email, Password, false));
+        }
+        private static void CreateCharacterResponse(ConnectionType type, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+
+            int Character_ID = buffer.ReadInteger();
+            string Name = buffer.ReadString();
+            int Gender = buffer.ReadInteger();
+            string Username = buffer.ReadString();
+
+            Data.tbl_Characters.Add(Character_ID, new _Characters(Character_ID, Data.GetAccountID(Username), Name, 1, Gender,
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100, 10, 10, 0));
+        }
         #endregion
     }
 }

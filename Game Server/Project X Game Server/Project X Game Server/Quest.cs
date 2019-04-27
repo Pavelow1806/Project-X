@@ -222,16 +222,18 @@ namespace Project_X_Game_Server
             objectiveProgress = Progress;
         }
 
-        public void Increment(int Character_ID)
+        public void Increment()
         {
             if (ObjectiveProgress + 1 < World.instance.quests[Quest_ID].Objective_Target)
             {
                 ++ObjectiveProgress;
+                SendData.UpdateQuestLog(this);
             }
             else if (ObjectiveProgress + 1 >= World.instance.quests[Quest_ID].Objective_Target)
             {
                 ++ObjectiveProgress;
                 Status = QuestStatus.Finished;
+                SendData.UpdateQuestLog(this);
             }
         }
 
