@@ -33,7 +33,7 @@ namespace Project_X_Game_Server
         MySqlCommand Command = null;
         MySqlDataReader reader = null;
         MySqlTransaction Transaction = null;
-        string ConnectionString = "Server=projectx.cqekxmwdej63.us-east-2.rds.amazonaws.com;Port=3306;Database=Pavelow;Uid=Pavelow;Pwd=asdfgh147856;";
+        string ConnectionString = "Server=projectxmain.cviytaoeskbp.eu-west-2.rds.amazonaws.com; Port=3306;Database=Pavelow;Uid=Pavelow;Pwd=asdfgh147856;";
 
         public Database()
         {
