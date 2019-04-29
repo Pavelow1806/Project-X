@@ -50,14 +50,14 @@ namespace Project_X_Login_Server
                 }
                 if (type != LogType.START)
                 {
-                    Console.Write("     " + DateTime.Now.ToString() + " : ");
+                    Console.Write("     " + DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss") + " : ");
                 }
                 Console.ForegroundColor = SetColour(type);
                 int currentLine = Console.CursorTop;
                 Console.WriteLine(Message);
                 Console.ForegroundColor = DefaultColour;
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write("     " + DateTime.Now.ToString() + " : Admin>");
+                Console.Write("     " + DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss") + " : Admin>");
                 return currentLine;
             }
         }
@@ -75,7 +75,7 @@ namespace Project_X_Login_Server
                 }
                 if (type != LogType.START)
                 {
-                    Console.Write("     " + DateTime.Now.ToString() + " : ");
+                    Console.Write("     " + DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss") + " : ");
                 }
                 Console.ForegroundColor = SetColour(type);
                 Console.WriteLine(Message);
@@ -85,7 +85,7 @@ namespace Project_X_Login_Server
         }
         public static void WriteUser()
         {
-            Console.Write("     " + DateTime.Now.ToString() + " : Admin>");
+            Console.Write("     " + DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss") + " : Admin>");
         }
         private static ConsoleColor SetColour(LogType type)
         {

@@ -581,7 +581,7 @@ namespace Project_X_Game_Server
         public void BuildBuffer(ref ByteBuffer.ByteBuffer buffer)
         {
             buffer = new ByteBuffer.ByteBuffer();
-            buffer.WriteString(DateTime.Now.ToString());
+            buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             // Players
             buffer.WriteInteger(playersInWorld.Count);
             for (int i = 0; i < playersInWorld.Count; i++)

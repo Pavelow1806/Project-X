@@ -269,7 +269,7 @@ namespace Project_X_Game_Server
 
                 buffer.WriteInteger(Account_ID);
                 buffer.WriteInteger((int)activity);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                 buffer.WriteString(SessionID);
 
                 sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.ConnectivityData.ToString(), -1, buffer.ToArray());
@@ -302,7 +302,7 @@ namespace Project_X_Game_Server
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
-            buffer.WriteString(DateTime.Now.ToString());
+            buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.Players);
             // Players
             buffer.WriteInteger(World.instance.playersInWorld.Count); // Minus 1 due to the player receiving not getting their own details
@@ -327,7 +327,7 @@ namespace Project_X_Game_Server
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
-            buffer.WriteString(DateTime.Now.ToString());
+            buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.NPCs);
             // NPCs
             buffer.WriteInteger(World.instance.NPCsInWorld.Count);
@@ -354,7 +354,7 @@ namespace Project_X_Game_Server
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
-            buffer.WriteString(DateTime.Now.ToString());
+            buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.Collectables);
             // Collectables
             buffer.WriteInteger(World.instance.collectablesInWorld.Count);
@@ -377,7 +377,7 @@ namespace Project_X_Game_Server
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
-            buffer.WriteString(DateTime.Now.ToString());
+            buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.QuestLog);
             // Quest Log
             List<Quest_Log> QuestLog = World.instance.GetQuestLog(Network.instance.Clients[index].Character_ID);
@@ -410,7 +410,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.CharacterDetails, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                 buffer.WriteInteger(Character.Character_ID);
                 buffer.WriteString(Character.Name);
                 buffer.WriteInteger(Character.Level);
@@ -468,7 +468,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.PlayerStateChange, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                 buffer.WriteInteger((int)state);
                 switch (state)
                 {
@@ -512,7 +512,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.QuestReturn, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                 if (qr.Null)
                 {
                     buffer.WriteByte(1);
@@ -544,7 +544,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.QuestInteractConfirm, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                 buffer.WriteByte((Confirmed) ? (byte)1 : (byte)0);
                 buffer.WriteInteger(Quest_ID);
                 buffer.WriteInteger((int)NewStatus);
@@ -564,7 +564,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.CollectableInteractConfirm, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(col.Entity_ID);
                 buffer.WriteByte(col.Active ? (byte)1 : (byte)0);
@@ -595,7 +595,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.CollectableToggle, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Collectable_Entity_ID);
                 buffer.WriteByte(Active ? (byte)1 : (byte)0);
@@ -624,7 +624,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.AttackResponse, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Character_ID);
                 buffer.WriteInteger(npc.Entity_ID);
@@ -659,7 +659,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.UpdateQuestLog, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Quest_ID);
                 buffer.WriteInteger(Quest_Log_ID);
@@ -683,7 +683,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.Attacked, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Current_HP);
                 buffer.WriteInteger(Damage);
@@ -703,7 +703,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.Respawned, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Current_HP);
                 buffer.WriteFloat(x);
@@ -726,7 +726,7 @@ namespace Project_X_Game_Server
             {
                 ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
                 BuildBasePacket((int)ClientSendPacketNumbers.Heal, ref buffer);
-                buffer.WriteString(DateTime.Now.ToString());
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 
                 buffer.WriteInteger(Current_HP);
                 buffer.WriteInteger(Heal_Amount);
