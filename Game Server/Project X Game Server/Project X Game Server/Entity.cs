@@ -22,7 +22,24 @@ namespace Project_X_Game_Server
     public class Entity
     {
         public EntityType type;
-        public int Entity_ID = -1;
+
+        private int entity_ID = -1;
+        public int Entity_ID
+        {
+            get
+            {
+                return entity_ID;
+            }
+            set
+            {
+                if (entity_ID != value)
+                {
+                    Changed = true;
+                    entity_ID = value;
+                }
+            }
+        }
+
         private string _Name = "";
         public string Name
         {
@@ -30,15 +47,8 @@ namespace Project_X_Game_Server
             {
                 return _Name;
             }
-            set
-            {
-                if (_Name != value)
-                {
-                    Changed = true;
-                    _Name = value;
-                }
-            }
         }
+
         private int _Level = 1;
         public int Level
         {
@@ -55,7 +65,9 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         public Gender gender;
+
         private float _x = 0.0f;
         public float x
         {
@@ -72,6 +84,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _y = 0.0f;
         public float y
         {
@@ -88,6 +101,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _z = 0.0f;
         public float z
         {
@@ -104,6 +118,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _r = 0.0f;
         public float r
         {
@@ -120,6 +135,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _vx = 0.0f;
         public float vx
         {
@@ -136,6 +152,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _vy = 0.0f;
         public float vy
         {
@@ -152,6 +169,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private float _vz = 0.0f;
         public float vz
         {
@@ -168,6 +186,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private EntityType _TargetType = EntityType.NONE;
         public EntityType TargetType
         {
@@ -184,6 +203,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private int _TargetID = -1;
         public int TargetID
         {
@@ -200,6 +220,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+
         private int max_HP = 100;
         public int Max_HP
         {
@@ -208,6 +229,7 @@ namespace Project_X_Game_Server
                 return max_HP;
             }
         }
+
         private int current_HP = 100;
         public int Current_HP
         {
@@ -219,11 +241,15 @@ namespace Project_X_Game_Server
             {
                 if (current_HP != value)
                 {
-                    Changed = true;
-                    current_HP = value;
+                    lock (EntityLock)
+                    {
+                        Changed = true;
+                        current_HP = value;
+                    }
                 }
             }
         }
+
         private int strength = 0;
         public int Strength
         {
@@ -232,6 +258,7 @@ namespace Project_X_Game_Server
                 return strength;
             }
         }
+
         private int agility = 0;
         public int Agility
         {
@@ -258,13 +285,18 @@ namespace Project_X_Game_Server
             }
         }
 
+        public int BloodMultiplier = 1;
+        public DateTime BloodExpire = default(DateTime);
+
         public DateTime NextAttack = default(DateTime);
 
         public AnimationState AnimState = new AnimationState();
 
         protected bool Changed = false;
 
-        protected ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+        private static readonly object EntityLock = new object();
+
+        protected ByteBuffer.ByteBuffer UDPbuffer = new ByteBuffer.ByteBuffer();
 
         public Entity(int ID, string name, int level, Gender _gender, float x, float y, float z, float r,
             float vX, float vY, float vZ, int HP, int Strength, int Agility)
@@ -286,9 +318,24 @@ namespace Project_X_Game_Server
             agility = Agility;
         }
 
-        protected virtual void BuildTransmission(out byte[] data)
+        public void Respawn()
         {
-            buffer = new ByteBuffer.ByteBuffer();
+            Current_HP = Max_HP;
+            if (type == EntityType.Player)
+            {
+                x = 0.0f;
+                y = 0.0f;
+                z = 0.0f;
+                r = 0.0f;
+                vx = 0.0f;
+                vy = 0.0f;
+                vz = 0.0f;
+                AnimState.Dead = false;
+            }
+        }
+
+        protected virtual void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)
+        {
             buffer.WriteInteger(Entity_ID);
             buffer.WriteFloat(_x);
             buffer.WriteFloat(_y);
@@ -334,7 +381,6 @@ namespace Project_X_Game_Server
             buffer.WriteInteger((int)_TargetType);
             buffer.WriteInteger(_TargetID);
             buffer.WriteByte(inCombat ? (byte)1 : (byte)0);
-            data = null;
         }
     }
     class Spawn

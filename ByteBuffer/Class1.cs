@@ -22,6 +22,24 @@ namespace ByteBuffer
             return readpos;
         }
 
+        public void SetReadPos(int newpos)
+        {
+            if (Buff.Count > newpos)
+            {
+                if (buffUpdate)
+                {
+                    readBuff = Buff.ToArray();
+                    buffUpdate = false;
+                }
+
+                readpos = newpos;
+            }
+            else
+            {
+                throw new Exception("Byte Buffer is past its limit!");
+            }
+        }
+
         public byte[] ToArray()
         {
             return Buff.ToArray();

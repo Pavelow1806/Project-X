@@ -219,7 +219,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Activity.Add(reader.GetInt32("Activity_ID"), new _Activity(reader.GetInt32("Activity_ID"), reader.GetInt32("Account_ID"), (Activity)reader.GetInt32("Activity_Type"), reader.GetDateTime("DTStamp"), reader.GetString("Session_ID"), false));
+                    Data.tbl_Activity.Add(new _Activity(reader.GetInt32("Activity_ID"), reader.GetInt32("Account_ID"), (Activity)reader.GetInt32("Activity_Type"), reader.GetDateTime("DTStamp"), reader.GetString("Session_ID"), false));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -401,6 +401,32 @@ namespace Project_X_Synchronization_Server
                     else
                     {
                         Log.log(SubLineNumber, "Downloading data from tbl_Experience, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                }
+                reader.Close();
+
+                // tbl_Connectivity
+                Log.log(LineNumber, "Performing initial synchronization of database.. Loading tbl_Connectivity into Cache..", Log.LogType.CACHE);
+                RecordCount = Count("SELECT COUNT(*) from tbl_Connectivity;");
+                reader = QueryDatabase("SELECT * FROM tbl_Connectivity;");
+                RecordNumber = 0;
+                SubLineNumber = -1;
+                while (reader.Read())
+                {
+                    Data.tbl_Connectivity.Add(new _Connectivity(reader.GetInt32("Character_ID"), reader.GetDateTime("DTStamp"), 
+                        reader.GetFloat("TCP_Latency"), reader.GetFloat("TCP_Throughput"), reader.GetInt32("TCP_Packets_Sent"), reader.GetInt32("TCP_Packets_Received"), 
+                        reader.GetFloat("UDP_Latency"), reader.GetFloat("UDP_Throughput"), reader.GetInt32("UDP_Packets_Sent"), reader.GetInt32("UDP_Packets_Received"), 
+                        false, reader.GetInt32("ID")));
+                    ++RecordNumber;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Downloading data from tbl_Connectivity, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
+                            ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Downloading data from tbl_Connectivity, Record: " + RecordNumber.ToString() + " of " + RecordCount.ToString() + " (" +
                             ((RecordNumber == 0 || RecordCount == 0) ? "0.00%" : ((RecordCount / RecordNumber) * 100).ToString("0.00") + "%") + ")", Log.LogType.CACHE);
                     }
                 }

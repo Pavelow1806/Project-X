@@ -1,3 +1,5 @@
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.csprojAssemblyReference.cache
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.csproj.CoreCompileInputs.cache
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\Project X Game Server.exe.config
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\Project X Game Server.exe
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\Project X Game Server.pdb
@@ -8,8 +10,6 @@ C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Proj
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\Google.Protobuf.pdb
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\Google.Protobuf.xml
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Debug\MySql.Data.xml
-C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.csprojAssemblyReference.cache
-C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.csproj.CoreCompileInputs.cache
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.csproj.CopyComplete
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.exe
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Debug\Project X Game Server.pdb

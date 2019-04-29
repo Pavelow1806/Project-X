@@ -28,7 +28,9 @@ namespace Project_X_Synchronization_Server
         WorldRequest,
         UpdatePlayerData,
         UpdateQuestLog,
-        CreateQuestLog
+        CreateQuestLog,
+        ConnectivityData,
+        LogActivity
     }
     public enum SyncServerProcessPacketNumbers
     {
@@ -167,8 +169,61 @@ namespace Project_X_Synchronization_Server
             int Progress = buffer.ReadInteger();
             int Status = buffer.ReadInteger();
             int Log_ID = Database.instance.Insert_Record("CALL CreateQuestLog(" + Quest_ID + ", " + Character_ID + ", 0, " + Status + ");");
-            Data.tbl_Quest_Log.Add(Log_ID, new _Quest_Log(Log_ID, Character_ID, Quest_ID, Status, Progress));
+            if (!Data.tbl_Quest_Log.ContainsKey(Log_ID))
+            {
+                Data.tbl_Quest_Log.Add(Log_ID, new _Quest_Log(Log_ID, Character_ID, Quest_ID, Status, Progress));
+            }
+            else
+            {
+                Data.tbl_Quest_Log[Log_ID].Quest_Status = Status;
+                Data.tbl_Quest_Log[Log_ID].Progress = Progress;
+            }
             SendData.NewQuestLog(Data.tbl_Quest_Log[Log_ID]);
+        }
+        private static void ConnectivityData(ConnectionType type, byte[] data)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                buffer.WriteBytes(data);
+                ReadHeader(ref buffer);
+
+                int Count = buffer.ReadInteger();
+                for (int i = 0; i < Count; i++)
+                {
+                    int Character_ID = buffer.ReadInteger();
+                    float TCP_Throughput = buffer.ReadFloat();
+                    int TCP_Packets_Received = buffer.ReadInteger();
+                    int TCP_Packets_Sent = buffer.ReadInteger();
+                    float TCP_Latency = buffer.ReadFloat();
+                    float UDP_Throughput = buffer.ReadFloat();
+                    int UDP_Packets_Received = buffer.ReadInteger();
+                    int UDP_Packets_Sent = buffer.ReadInteger();
+                    float UDP_Latency = buffer.ReadFloat();
+                    DateTime LogStart = Convert.ToDateTime(buffer.ReadString());
+                    DateTime LogFinish = Convert.ToDateTime(buffer.ReadString());
+                    Data.tbl_Connectivity.Add(new _Connectivity(Character_ID, LogStart,
+                        TCP_Latency, TCP_Throughput, TCP_Packets_Sent, TCP_Packets_Received, UDP_Latency, UDP_Throughput, UDP_Packets_Sent, UDP_Packets_Received,
+                        true));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.log("Connectivity Data threw an error " + e.Message);
+            }
+        }
+        private static void LogActivity(ConnectionType type, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+
+            int Account_ID = buffer.ReadInteger();
+            int Activity = buffer.ReadInteger();
+            DateTime DTStamp = Convert.ToDateTime(buffer.ReadString());
+            string SessionID = buffer.ReadString();
+
+            Data.tbl_Activity.Add(new _Activity(-1, Account_ID, (Activity)Activity, DTStamp, SessionID, true));
         }
         #endregion
 

@@ -15,8 +15,11 @@ namespace Project_X_Game_Server
         private Thread UpdateThread;
         public static float GlobalAttackSpeed = 2.0f;
         public static float InteractionDistance = 15.0f;
-        public static int TickRate = 5;
-        public static int HealthRegenPer5 = 5;
+        public static int TickRate = 10;
+        public static int HealthRegenPer5 = 1;
+        public static int HealAmount = 20;
+        public static int StompDamage = 20;
+        public static int BloodDamageIncrease = 20;
         private static DateTime NextTick = default(DateTime);
         private int entityCounter = 0;
         public int EntityCounter
@@ -26,7 +29,7 @@ namespace Project_X_Game_Server
                 return ++entityCounter;
             }
         }
-        private ByteBuffer.ByteBuffer WorldBuffer = new ByteBuffer.ByteBuffer();
+        private ByteBuffer.ByteBuffer WorldBuffer = null;
 
         public Dictionary<int, Player> players = new Dictionary<int, Player>();
         public bool ReceivedPlayers = false;
@@ -127,51 +130,98 @@ namespace Project_X_Game_Server
             }
             Running = true;
             // Main loop
-            NextTick = DateTime.Now.AddSeconds(TickRate);
+            NextTick = DateTime.Now.AddSeconds(5);
             while (Running)
             {
-                if (DateTime.Now > NextTick)
+                try
                 {
-                    foreach (NPC npc in NPCsInWorld)
+                    if (DateTime.Now >= NextTick)
                     {
-                        if (npc.Active)
+                        foreach (NPC npc in NPCsInWorld)
                         {
-                            if (npc.Current_HP + HealthRegenPer5 > npc.Max_HP)
+                            if (npc.Active && npc.Current_HP > 0)
                             {
-                                npc.Current_HP = npc.Max_HP;
+                                if (npc.Current_HP + HealthRegenPer5 > npc.Max_HP)
+                                {
+                                    npc.Current_HP = npc.Max_HP;
+                                }
+                                else
+                                {
+                                    npc.Current_HP += HealthRegenPer5;
+                                }
+                            }
+                        }
+                        foreach (Player player in playersInWorld)
+                        {
+                            if (player.Current_HP + HealthRegenPer5 > player.Max_HP)
+                            {
+                                player.Current_HP = player.Max_HP;
                             }
                             else
                             {
-                                npc.Current_HP += HealthRegenPer5;
+                                player.Current_HP += HealthRegenPer5;
+                                SendData.Heal(Network.instance.GetIndex(player.Character_ID), player.Current_HP, HealAmount);
+                            }
+                            if (player.InCombat && MathF.Distance(player, GetNPCByEntityID(player.TargetID)) > InteractionDistance)
+                            {
+                                player.InCombat = false;
+                                player.AnimState.Attacking = false;
                             }
                         }
+                        NextTick = DateTime.Now.AddSeconds(5);
                     }
-                }
-                foreach (Player player in playersInWorld)
-                {
-                    if (player.InCombat && MathF.Distance(player, GetNPCByEntityID(player.TargetID)) > InteractionDistance)
+                    foreach (NPC npc in NPCsInWorld)
                     {
-                        player.InCombat = false;
-                        player.AnimState.Attacking = false;
-                    }
-                }
-                foreach (NPC npc in NPCsInWorld)
-                {
-                    if (npc.InCombat)
-                    {
-                        if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 && 
-                            MathF.Distance(npc, players[npc.TargetID]) <= InteractionDistance)
+                        if (npc.TargetID > -1 && npc.Current_HP > 0 && npc.Active)
                         {
-                            players[npc.TargetID].Current_HP -= MathF.Damage(npc.Strength, npc.Agility);
-                            npc.NextAttack = DateTime.Now.AddSeconds(GlobalAttackSpeed);
+                            if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) <= InteractionDistance)
+                            {
+                                if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 &&
+                                    players[npc.TargetID].Current_HP > 0)
+                                {
+                                    int Damage = MathF.Damage(npc.Strength, npc.Agility, npc.BloodMultiplier);
+                                    players[npc.TargetID].Current_HP -= Damage;
+                                    SendData.Attacked(Network.instance.GetIndex(npc.TargetID), players[npc.TargetID].Current_HP, Damage);
+                                    npc.NextAttack = DateTime.Now.AddSeconds(GlobalAttackSpeed);
+                                }
+                            }
+                            else if (!players[npc.TargetID].InWorld || (npc.InCombat && MathF.Distance(npc, players[npc.TargetID]) > InteractionDistance))
+                            {
+                                players[npc.TargetID].InCombat = false;
+                                npc.InCombat = false;
+                                npc.TargetID = -1;
+                                npc.TargetType = EntityType.NONE;
+                            }
+                        }
+                        else if (npc.TargetID == -1 && npc.Active)
+                        {
+                            npc.InCombat = false;
+                            npc.TargetID = -1;
+                            npc.TargetType = EntityType.NONE;
+                        }
+                        else if (npc.Current_HP <= 0)
+                        {
+                            if (npc.TargetID > -1)
+                                players[npc.TargetID].InCombat = false;
+                            npc.InCombat = false;
+                            npc.TargetID = -1;
+                            npc.TargetType = EntityType.NONE;
+                            npc.Active = false;
                         }
                     }
-                    if (npc.Current_HP <= 0)
+                    foreach (Player p in playersInWorld)
                     {
-                        npc.Active = false;
+                        if (DateTime.Now > p.BloodExpire)
+                        {
+                            p.BloodMultiplier = 1;
+                        }
                     }
                 }
-
+                catch (Exception e)
+                {
+                    Log.log("An error was caught during the world loop: " + e.Message);
+                }
+                Thread.Sleep(TickRate);
             }
             UpdateThread.Join();
         }
@@ -213,31 +263,67 @@ namespace Project_X_Game_Server
         public List<Quest> GetAvailableQuests(int Character_ID)
         {
             List<Quest> result = new List<Quest>();
-            int MaxCompletedQuestID = 0;
-            foreach (Quest_Log ql in quest_log)
+            foreach (KeyValuePair<int, Quest> q in quests)
             {
-                if (ql.Character_ID == Character_ID && 
-                    ql.Status == QuestStatus.Complete && 
-                    ql.Quest_ID > MaxCompletedQuestID)
+                if (GetQuestStatus(Character_ID, q.Value.ID) == QuestStatus.Complete)
                 {
-                    MaxCompletedQuestID = ql.Quest_ID;
-                }
-            }
-            if (MaxCompletedQuestID == 0)
-            {
-                result.Add(quests[1]);
-            }
-            else
-            {
-                foreach (KeyValuePair<int, Quest> q in quests)
-                {
-                    if (q.Value.Start_Requirement_Quest_ID == MaxCompletedQuestID)
+                    List<Quest> NextQuests = GetNextQuests(q.Value.ID);
+                    if (NextQuests != null && NextQuests.Count > 0)
                     {
-                        result.Add(q.Value);
+                        for (int i = 0; i < NextQuests.Count; i++)
+                        {
+                            if (GetQuestStatus(Character_ID, NextQuests[i].ID) == QuestStatus.None ||
+                                GetQuestStatus(Character_ID, NextQuests[i].ID) == QuestStatus.Available)
+                            {
+                                result.Add(NextQuests[i]);
+                            }
+                        }
                     }
                 }
             }
             return result;
+        }
+        public void UpdateQuestLog(int Character_ID)
+        {
+            List<Quest_Log> QuestLog = GetQuestLog(Character_ID);
+            List<Quest> ToBeChecked = new List<Quest>();
+            bool found = false;
+            foreach (KeyValuePair<int, Quest> q in quests)
+            {
+                found = false;
+                foreach (Quest_Log ql in QuestLog)
+                {
+                    if (ql.Quest_ID == q.Value.ID)
+                    {
+                        found = true;
+                    }
+                }
+                if (!found)
+                {
+                    ToBeChecked.Add(q.Value);
+                }
+            }
+            foreach (Quest quest in ToBeChecked)
+            {
+                Quest_Log QL = GetQuestLog(Character_ID, quest.Start_Requirement_Quest_ID);
+                if ((QL != null && QL.Status == QuestStatus.Complete) || quest.Start_Requirement_Quest_ID == -1)
+                {
+                    Quest_Log quest_Log = new Quest_Log(-1, Character_ID, quest.ID, QuestStatus.Available, 0);
+                    World.instance.quest_log.Add(quest_Log);
+                    SendData.CreateQuestLog(quest_Log);
+                }
+            }
+        }
+        public QuestStatus GetQuestStatus(int Character_ID, int Quest_ID)
+        {
+            foreach (Quest_Log ql in quest_log)
+            {
+                if (ql.Character_ID == Character_ID && ql.Quest_ID == Quest_ID)
+                {
+                    return ql.Status;
+                }
+            }
+            return QuestStatus.None;
         }
         public NPC GetNPCByEntityID(int Entity_ID)
         {
@@ -274,54 +360,28 @@ namespace Project_X_Game_Server
         }
         public QuestStatus GetQuestStateByNPC(int Character_ID, int NPC_ID)
         {
-            List<Quest> NPC_Quests = new List<Quest>();
-            foreach (KeyValuePair<int, Quest> quest in quests)
-            {
-                if (quest.Value.NPC_Start_ID == NPC_ID ||
-                    quest.Value.NPC_End_ID == NPC_ID)
-                {
-                    NPC_Quests.Add(quest.Value);
-                }
-            }
-            List<Quest_Log> Character_Quest_Log = new List<Quest_Log>();
-            foreach (Quest_Log questlog in quest_log)
-            {
-                if (questlog.Character_ID == Character_ID)
-                {
-                    Character_Quest_Log.Add(questlog);
-                }
-            }
+            World.instance.UpdateQuestLog(Character_ID);
             QuestStatus result = QuestStatus.None;
-            foreach (Quest q in NPC_Quests)
+            foreach (Quest_Log ql in quest_log)
             {
-                foreach (Quest_Log ql in Character_Quest_Log)
+                if (ql.Status == QuestStatus.Available && quests[ql.Quest_ID].NPC_Start_ID == NPC_ID)
                 {
-                    if (q.ID == ql.Quest_ID)
+                    result = ql.Status;
+                }
+                else if ((ql.Status == QuestStatus.InProgress || ql.Status == QuestStatus.Finished) && quests[ql.Quest_ID].NPC_End_ID == NPC_ID)
+                {
+                    if (result != QuestStatus.Available)
                     {
-                        if (ql.Status == QuestStatus.InProgress && 
-                            (result != QuestStatus.Finished && result != QuestStatus.Complete))
-                        {
-                            result = ql.Status;
-                        }
-                        else if (ql.Status == QuestStatus.Finished && 
-                            (result != QuestStatus.Complete && result != QuestStatus.Finished))
-                        {
-                            result = ql.Status;
-                        }
-                        else if (ql.Status == QuestStatus.Complete &&
-                            result != QuestStatus.Complete)
-                        {
-                            result = ql.Status;
-                        }
+                        result = ql.Status;
                     }
                 }
             }
             if (result == QuestStatus.None)
             {
-                List<Quest> qs = GetAvailableQuests(Character_ID);
-                foreach (Quest que in qs)
+                List<Quest> AvailableQuests = GetAvailableQuests(Character_ID);
+                foreach (Quest q in AvailableQuests)
                 {
-                    if (que.NPC_Start_ID == NPC_ID)
+                    if (q.NPC_Start_ID == NPC_ID)
                     {
                         result = QuestStatus.Available;
                     }
@@ -341,57 +401,109 @@ namespace Project_X_Game_Server
             }
             return result;
         }
-        public QuestReturn GetQuestContentByNPC(int Character_ID, int NPC_Entity_ID, out bool Create)
+        public QuestReturn GetQuestContentByNPCEntityID(int Character_ID, int NPC_Entity_ID, out bool Create)
         {
+            World.instance.UpdateQuestLog(Character_ID);
             QuestReturn result = new QuestReturn(true, QuestStatus.None, -1, -1, "", "", -1);
             NPC Subject = GetNPCByEntityID(NPC_Entity_ID);
             List<Quest> NPCQuests = GetNPCQuests(Subject.NPC_ID);
-            // Check whether any of the quests have data in the log
+            List<int> Quests_In_log = new List<int>();
             foreach (Quest_Log ql in quest_log)
             {
-                if (quests[ql.Quest_ID].NPC_Start_ID == Subject.NPC_ID || quests[ql.Quest_ID].NPC_End_ID == Subject.NPC_ID)
+                if (ql.Character_ID == Character_ID)
                 {
-                    result.Null = false;
-                    result.Status = ql.Status;
-                    result.Quest_ID = ql.Quest_ID;
-                    result.NPC_ID = Subject.Entity_ID;
-                    result.Title = quests[ql.Quest_ID].Title;
-                    if (quests[ql.Quest_ID].NPC_Start_ID == Subject.NPC_ID && (ql.Status != QuestStatus.Finished || ql.Status != QuestStatus.Complete))
+                    //if (GetNPCEntityID(quests[ql.Quest_ID].NPC_Start_ID) == NPC_Entity_ID)
+                    //{
+                    if (GetNPCEntityID(quests[ql.Quest_ID].NPC_Start_ID) == NPC_Entity_ID ||
+                        GetNPCEntityID(quests[ql.Quest_ID].NPC_End_ID) == NPC_Entity_ID)
                     {
-                        result.Text = quests[ql.Quest_ID].Start_Text;
+                        if (ql.Status == QuestStatus.Available)
+                        {
+                            result.Null = false;
+                            result.Status = ql.Status;
+                            result.NPC_ID = GetNPCEntityID(quests[ql.Quest_ID].NPC_Start_ID);
+                            result.Quest_ID = ql.Quest_ID;
+                            result.Target = quests[ql.Quest_ID].Objective_Target;
+                            result.Text = quests[ql.Quest_ID].Start_Text;
+                            result.Title = quests[ql.Quest_ID].Title;
+                        }
+                        else if (ql.Status == QuestStatus.InProgress)
+                        {
+                            if (result.Status != QuestStatus.Available)
+                            {
+                                result.Null = false;
+                                result.Status = ql.Status;
+                                result.NPC_ID = GetNPCEntityID(quests[ql.Quest_ID].NPC_Start_ID);
+                                result.Quest_ID = ql.Quest_ID;
+                                result.Target = quests[ql.Quest_ID].Objective_Target;
+                                result.Text = quests[ql.Quest_ID].Start_Text;
+                                result.Title = quests[ql.Quest_ID].Title;
+                            }
+                        }
+                        //}
+                        //if (GetNPCEntityID(quests[ql.Quest_ID].NPC_End_ID) == NPC_Entity_ID)
+                        //{
+                        if (ql.Status == QuestStatus.Finished)
+                        {
+                            if (result.Status != QuestStatus.Available)
+                            {
+                                result.Null = false;
+                                result.Status = ql.Status;
+                                result.NPC_ID = GetNPCEntityID(quests[ql.Quest_ID].NPC_End_ID);
+                                result.Quest_ID = ql.Quest_ID;
+                                result.Target = quests[ql.Quest_ID].Objective_Target;
+                                result.Text = quests[ql.Quest_ID].End_Text;
+                                result.Title = quests[ql.Quest_ID].Title;
+                            }
+                        }
+                        else if (ql.Status == QuestStatus.Complete)
+                        {
+                            if (result.Status != QuestStatus.Available)
+                            {
+                                result.Null = false;
+                                result.Status = ql.Status;
+                                result.NPC_ID = GetNPCEntityID(quests[ql.Quest_ID].NPC_End_ID);
+                                result.Quest_ID = ql.Quest_ID;
+                                result.Target = quests[ql.Quest_ID].Objective_Target;
+                                result.Text = quests[ql.Quest_ID].End_Text;
+                                result.Title = quests[ql.Quest_ID].Title;
+                            }
+                        }
                     }
-                    else
-                    {
-                        result.Text = quests[ql.Quest_ID].End_Text;
-                    }
-                    result.Target = quests[ql.Quest_ID].Objective_Target;
-                    Create = false;
-                    return result;
+                    //}
                 }
             }
-            List<Quest> AvailableQuests = GetAvailableQuests(Character_ID);
-            foreach (Quest q in AvailableQuests)
+            if (result.Status == QuestStatus.None)
             {
-                if (q.NPC_Start_ID == Subject.NPC_ID)
+                List<Quest> AvailableQuests = GetAvailableQuests(Character_ID);
+                foreach (Quest q in AvailableQuests)
                 {
-                    result.Null = false;
-                    result.Status = QuestStatus.Available;
-                    result.Quest_ID = q.ID;
-                    result.NPC_ID = Subject.Entity_ID;
-                    result.Title = quests[q.ID].Title;
-                    if (quests[q.ID].NPC_Start_ID == Subject.NPC_ID)
+                    if (GetNPCEntityID(q.NPC_End_ID) == NPC_Entity_ID || GetNPCEntityID(q.NPC_Start_ID) == NPC_Entity_ID)
                     {
-                        result.Text = quests[q.ID].Start_Text;
+                        bool found = false;
+                        for (int i = 0; i < Quests_In_log.Count; i++)
+                        {
+                            if (q.ID == Quests_In_log[i])
+                            {
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                        {
+                            result.Null = false;
+                            result.Status = QuestStatus.Available;
+                            result.NPC_ID = NPC_Entity_ID;
+                            result.Quest_ID = q.ID;
+                            result.Target = quests[q.ID].Objective_Target;
+                            result.Text = quests[q.ID].End_Text;
+                            result.Title = quests[q.ID].Title;
+                            Create = true;
+                            return result;
+                        }
                     }
-                    else
-                    {
-                        result.Text = quests[q.ID].End_Text;
-                    }
-                    result.Target = quests[q.ID].Objective_Target;
-                    Create = true;
-                    return result;
                 }
             }
+
             Create = false;
             return result;
         }
@@ -466,28 +578,21 @@ namespace Project_X_Game_Server
             }
             return result;
         }
-        public byte[] PullBuffer()
+        public void BuildBuffer(ref ByteBuffer.ByteBuffer buffer)
         {
-            WorldBuffer = new ByteBuffer.ByteBuffer();
+            buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteString(DateTime.Now.ToString());
             // Players
-            WorldBuffer.WriteInteger(playersInWorld.Count);
+            buffer.WriteInteger(playersInWorld.Count);
             for (int i = 0; i < playersInWorld.Count; i++)
             {
-                WorldBuffer.WriteBytes(playersInWorld[i].GetBuffer());
+                playersInWorld[i].BuildBuffer(ref buffer);
             }
             // NPCs
-            WorldBuffer.WriteInteger(NPCsInWorld.Count);
+            buffer.WriteInteger(NPCsInWorld.Count);
             for (int i = 0; i < NPCsInWorld.Count; i++)
             {
-                WorldBuffer.WriteBytes(NPCsInWorld[i].GetBuffer());
-            }
-            if (WorldBuffer != null)
-            {
-                return WorldBuffer.ToArray();
-            }
-            else
-            {
-                return null;
+                NPCsInWorld[i].BuildBuffer(ref buffer);
             }
         }
     }

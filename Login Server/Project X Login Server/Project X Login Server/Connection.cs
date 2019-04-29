@@ -148,9 +148,6 @@ namespace Project_X_Login_Server
                     // Output error message
                     Log.log("An error occured while receiving data. Closing connection to " + Type.ToString() + ((Type == ConnectionType.CLIENT) ? " Index " + Index.ToString() : "."), Log.LogType.ERROR);
 
-                    // Send DB updates
-                    Database.instance.LogActivity(Username, Activity.DISCONNECT, SessionID);
-
                     // Close the connection
                     Close();
 

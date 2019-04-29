@@ -11,6 +11,7 @@ namespace Project_X_Synchronization_Server
     {
         public static SynchronizationScheduler instance;
         private static int SecondsBetweenSynchronizations = -1;
+        private static int TickRate = 10;
 
         #region Locking
         private static readonly object lockObj = new object();
@@ -59,60 +60,46 @@ namespace Project_X_Synchronization_Server
 
         private void StartSynchronization()
         {
-            SecondsUntilSynchronization = (int)((NextSynchronization - DateTime.Now).TotalSeconds);
             int LastSeconds = 0;
             int LineNumber = Log.log("Starting synchronization of data..", Log.LogType.SYNC);
             while (Running)
             {
                 lock (lockObj)
                 {
-                    SecondsUntilSynchronization = (int)((NextSynchronization - DateTime.Now).TotalSeconds);
-                    if (SecondsUntilSynchronization < 0 || SyncNow)
+                    // Synchronize
+                    Log.log(LineNumber, "Starting synchronization of data..", Log.LogType.SYNC);
+                    Response r = Database.instance.Synchronize(LineNumber);
+                    switch (r)
                     {
-                        // Synchronize
-                        Log.log(LineNumber, "Starting synchronization of data..", Log.LogType.SYNC);
-                        Response r = Database.instance.Synchronize(LineNumber);
-                        switch (r)
-                        {
-                            case Response.SUCCESSFUL:
-                                Log.log(LineNumber, "Synchronization of data successful.", Log.LogType.SUCCESS);
-                                break;
-                            case Response.UNSUCCESSFUL:
-                                Log.log(LineNumber, "Synchronization of data unsuccessful.", Log.LogType.ERROR);
-                                break;
-                            case Response.ERROR:
-                                Log.log(LineNumber, "Synchronization of data unsuccessful, fix errors and try again.", Log.LogType.ERROR);
-                                break;
-                            default:
-                                break;
-                        }
-                        NextSynchronization = DateTime.Now.AddSeconds(SecondsBetweenSynchronizations);
-                        SyncNow = false;
-                        //LineNumber = -1;
+                        case Response.SUCCESSFUL:
+                            Log.log(LineNumber, "Synchronization of data successful.", Log.LogType.SUCCESS);
+                            break;
+                        case Response.UNSUCCESSFUL:
+                            Log.log(LineNumber, "Synchronization of data unsuccessful.", Log.LogType.ERROR);
+                            break;
+                        case Response.ERROR:
+                            Log.log(LineNumber, "Synchronization of data unsuccessful, fix errors and try again.", Log.LogType.ERROR);
+                            break;
+                        default:
+                            break;
+                    }
+                    NextSynchronization = DateTime.Now.AddSeconds(SecondsBetweenSynchronizations);
+                    SyncNow = false;
+                    //LineNumber = -1;
+                }
+                for (int i = SecondsBetweenSynchronizations; i > 0; --i)
+                {
+                    if (LineNumber == -1)
+                    {
+                        LineNumber = Log.log("Synchronization of data happening in " + i.ToString() + " seconds.", Log.LogType.SYNC);
                     }
                     else
                     {
-                        if (SecondsUntilSynchronization != LastSeconds)
-                        {
-                            if (LineNumber == -1)
-                            {
-                                LineNumber = Log.log("Synchronization of data happening in " + SecondsUntilSynchronization.ToString() + " seconds.", Log.LogType.SYNC);
-                            }
-                            else
-                            {
-                                if (SecondsUntilSynchronization == 0)
-                                {
-                                    LineNumber = Log.log("Starting data synchronization..", Log.LogType.SYNC);
-                                }
-                                else
-                                {
-                                    Log.log(LineNumber, "Synchronization of data happening in " + SecondsUntilSynchronization.ToString() + " seconds.", Log.LogType.SYNC);
-                                }
-                            }
-                            LastSeconds = SecondsUntilSynchronization;
-                        }
+                        Log.log(LineNumber, "Synchronization of data happening in " + i.ToString() + " seconds.", Log.LogType.SYNC);
                     }
+                    Thread.Sleep(1000);
                 }
+                LineNumber = Log.log("Starting data synchronization..", Log.LogType.SYNC);
             }
             SyncThread.Join();
         }

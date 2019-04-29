@@ -44,7 +44,7 @@ namespace Project_X_Game_Server
         {
             while (DateTime.Now < TimeUntilRelease || !Authenticated)
             {
-
+                
             }
             if (Authenticated)
             {
@@ -69,19 +69,19 @@ namespace Project_X_Game_Server
         public void WorldStream()
         {
             Log.log("Starting world update thread..", Log.LogType.CACHE);
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            World.instance.BuildBuffer(ref buffer);
             while (Connected)
             {
-                //foreach (BufferReturn item in Enum.GetValues(typeof(BufferReturn)))
-                //{
-                    for (int i = 0; i < Network.instance.Clients.Length; i++)
+                for (int i = 0; i < Network.instance.Clients.Length; i++)
+                {
+                    World.instance.BuildBuffer(ref buffer);
+                    if (Network.instance.Clients[i].InGame() && buffer.Count() > 0)
                     {
-                        if (Network.instance.Clients[i].InGame())
-                        {
-                            //SendData.SendUDP_WorldUpdate(i, item);
-                            SendData.SendUDP_WorldUpdate(i);
-                        }
+                        SendData.SendUDP_Packet(Network.instance.Clients[i], buffer.ToArray());
                     }
-                //}
+                }
+                Thread.Sleep(World.TickRate);
             }
             WorldThread.Join();
         }

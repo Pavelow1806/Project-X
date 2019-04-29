@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,7 +17,7 @@ namespace Project_X_Synchronization_Server
         // Accounts table
         public static Dictionary<int, _Accounts> tbl_Accounts = new Dictionary<int, _Accounts>();
         //Activity table
-        public static Dictionary<int, _Activity> tbl_Activity = new Dictionary<int, _Activity>();
+        public static List<_Activity> tbl_Activity = new List<_Activity>();
         // Characters table
         public static Dictionary<int, _Characters> tbl_Characters = new Dictionary<int, _Characters>();
         // Quests table
@@ -31,6 +32,8 @@ namespace Project_X_Synchronization_Server
         public static Dictionary<int, _Spawn_Positions> tbl_Spawn_Positions = new Dictionary<int, _Spawn_Positions>();
         // Experience table
         public static Dictionary<int, _Experience> tbl_Experience = new Dictionary<int, _Experience>();
+        // Connectivity table
+        public static ConcurrentBag<_Connectivity> tbl_Connectivity = new ConcurrentBag<_Connectivity>();
         #endregion
 
         private static List<string> UpdateQueries;
@@ -78,12 +81,12 @@ namespace Project_X_Synchronization_Server
                     }
                 }
             }
-            foreach (KeyValuePair<int, _Activity> activity in tbl_Activity)
+            foreach (_Activity activity in tbl_Activity)
             {
-                if (activity.Value.SQL != "")
+                if (activity.SQL != "")
                 {
-                    UpdateQueries.Add(activity.Value.SQL);
-                    activity.Value.SQL = "";
+                    UpdateQueries.Add(activity.SQL);
+                    activity.SQL = "";
                     ++NumberQueries;
                     if (SubLineNumber == -1)
                     {
@@ -135,6 +138,23 @@ namespace Project_X_Synchronization_Server
                 {
                     UpdateQueries.Add(npc.Value.SQL);
                     npc.Value.SQL = "";
+                    ++NumberQueries;
+                    if (SubLineNumber == -1)
+                    {
+                        SubLineNumber = Log.log("Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                    else
+                    {
+                        Log.log(SubLineNumber, "Found " + NumberQueries.ToString() + " queries so far..", Log.LogType.SYNC);
+                    }
+                }
+            }
+            foreach (_Connectivity conn in tbl_Connectivity)
+            {
+                if (conn.SQL != "")
+                {
+                    UpdateQueries.Add(conn.SQL);
+                    conn.SQL = "";
                     ++NumberQueries;
                     if (SubLineNumber == -1)
                     {
@@ -365,7 +385,7 @@ namespace Project_X_Synchronization_Server
         {
             if (New)
             {
-                return "INSERT INTO tbl_Activity (Account_ID, Activity_Type, DTStamp, Session_ID) SELECT " + account_ID.ToString() + ", " + ((int)activity_Type).ToString() + ", '" + dTStamp.ToString("yyyy/MM/dd hh:mm:ss") + "', '" + session_ID + "';";
+                return @"CALL LogAccountActivityID(""" + account_ID.ToString() + @""", " + (int)activity_Type + @", """ + session_ID + @""", 0);";
             }
             else
             {
@@ -1111,6 +1131,72 @@ namespace Project_X_Synchronization_Server
             strength = Strength;
             agility = Agility;
             hp = HP;
+        }
+    }
+    class _Connectivity : Record
+    {
+        public int ID;
+        public int Character_ID;
+        public DateTime DTStamp;
+        public float TCP_Latency;
+        public float TCP_Throughput;
+        public int TCP_Packets_Sent;
+        public int TCP_Packets_Received;
+        public float UDP_Latency;
+        public float UDP_Throughput;
+        public int UDP_Packets_Sent;
+        public int UDP_Packets_Received;
+
+        public _Connectivity(int character_ID, DateTime dTStamp,
+            float tcp_Latency, float tcp_Throughput,
+            int tcp_Packets_Sent, int tcp_Packets_Received, 
+            float udp_Latency, float udp_Throughput,
+            int udp_Packets_Sent, int udp_Packets_Received,
+            bool New, int id = 0)
+        {
+            Character_ID = character_ID;
+            DTStamp = dTStamp;
+            TCP_Latency = tcp_Latency;
+            TCP_Throughput = tcp_Throughput;
+            TCP_Packets_Sent = tcp_Packets_Sent;
+            TCP_Packets_Received = tcp_Packets_Received;
+            UDP_Latency = udp_Latency;
+            UDP_Throughput = udp_Throughput;
+            UDP_Packets_Sent = udp_Packets_Sent;
+            UDP_Packets_Received = udp_Packets_Received;
+            if (New)
+            {
+                SQL = CreateSQL();
+            }
+            else
+            {
+                ID = id;
+            }
+        }
+
+        private string CreateSQL()
+        {
+            return "INSERT INTO tbl_Connectivity " +
+                        "(Character_ID, " + 
+                        "DTStamp, " +
+                        "TCP_Latency, " + 
+                        "TCP_Throughput, " + 
+                        "TCP_Packets_Sent, " + 
+                        "TCP_Packets_Received, " +
+                        "UDP_Latency, " + 
+                        "UDP_Throughput, " +
+                        "UDP_Packets_Sent, " +
+                        "UDP_Packets_Received) " +
+                    "SELECT " + Character_ID + ", '" +
+                        DTStamp.ToString("yyyy-MM-dd HH:mm:ss") + "', " +
+                        TCP_Latency.ToString() + ", " +
+                        TCP_Throughput.ToString() + ", " +
+                        TCP_Packets_Sent.ToString() + ", " +
+                        TCP_Packets_Received.ToString() + ", " +
+                        UDP_Latency.ToString() + ", " +
+                        UDP_Throughput.ToString() + ", " +
+                        UDP_Packets_Sent.ToString() + ", " +
+                        UDP_Packets_Received.ToString() + ";";
         }
     }
 }

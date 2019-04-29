@@ -44,7 +44,13 @@ namespace Project_X_Game_Server
         {
             get
             {
-                if (NextSpawnTime > DateTime.Now)
+                if (NextSpawnTime < DateTime.Now && Current_HP <= 0 && NextSpawnTime != default(DateTime))
+                {
+                    NextSpawnTime = default(DateTime);
+                    Current_HP = Max_HP;
+                    return true;
+                }
+                else if (NextSpawnTime < DateTime.Now && Current_HP > 0)
                 {
                     return true;
                 }
@@ -75,24 +81,18 @@ namespace Project_X_Game_Server
             NextSpawnTime = DateTime.Now;
         }
 
-        protected override void BuildTransmission(out byte[] result)
+        protected override void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)
         {
-            if (Changed || AnimState.Changed)
-            {
-                base.BuildTransmission(out result);
+            base.BuildTransmission(ref buffer);
 
-                buffer.WriteInteger(NPC_ID);
+            buffer.WriteInteger(NPC_ID);
 
-                Changed = false;
-                AnimState.Changed = false;
-            }
-            result = buffer.ToArray();
+            //Changed = false;
+            //AnimState.Changed = false;
         }
-        public byte[] GetBuffer()
+        public void BuildBuffer(ref ByteBuffer.ByteBuffer buffer)
         {
-            byte[] result;
-            BuildTransmission(out result);
-            return result;
+            BuildTransmission(ref buffer);
         }
     }
 }

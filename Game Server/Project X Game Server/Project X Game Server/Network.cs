@@ -22,6 +22,9 @@ namespace Project_X_Game_Server
         #endregion
 
         public static Network instance;
+
+        private Thread MonitorThread;
+        private int MonitorTickRate = 5000;
         
         public static bool Running = false;
 
@@ -82,13 +85,19 @@ namespace Project_X_Game_Server
                 Listener.Start();
                 StartAccept();
                 Log.log(LineNumber, "Client/Synchronization Listener started.", Log.LogType.SUCCESS);
+
+                Running = true;
+
+                LineNumber = Log.log("Starting Connectivity Monitor..", Log.LogType.SYSTEM);
+                MonitorThread = new Thread(new ThreadStart(SendConnectivityData));
+                MonitorThread.Start();
+                Log.log(LineNumber, "Connectivity Monitor Thread Started.", Log.LogType.SUCCESS);
             }
             catch (Exception e)
             {
                 Log.log("An error occurred when attempting to start the server. > " + e.Message, Log.LogType.ERROR);
                 return false;
             }
-            Running = true;
             return true;
         }
         public void StartAccept()
@@ -183,6 +192,45 @@ namespace Project_X_Game_Server
         public void RemoveWhiteList(string ip)
         {
             WhiteList.Remove(ip);
+        }
+        public int GetIndex(int Character_ID)
+        {
+            for (int i = 0; i < Clients.Length; i++)
+            {
+                if (Clients[i].Character_ID == Character_ID)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        private void SendConnectivityData()
+        {
+            int LineN = -1;
+            Dictionary<int, Connectivity> data = new Dictionary<int, Connectivity>();
+            while (Running)
+            {
+                if (SyncServerAuthenticated)
+                {
+                    LineN = Log.log("Sending Monitor data to Synchonization Server..", Log.LogType.SYNC);
+                    data.Clear();
+                    for (int i = 0; i < Clients.Length; i++)
+                    {
+                        if (Clients[i].Character_ID > -1)
+                        {
+                            data.Add(Clients[i].Character_ID, new Connectivity(Clients[i].Character_ID, Clients[i].TCP_Throughput, Clients[i].TCP_PacketsReceived, Clients[i].TCP_PacketsSent, Clients[i].TCP_Latency,
+                                Clients[i].UDP_Throughput, Clients[i].UDP_PacketsReceived, Clients[i].UDP_PacketsSent, Clients[i].UDP_Latency, Clients[i].LogStart));
+                            //Clients[i].ResetStats();
+                            Log.log(LineN, "Sending Monitor data to Synchronization Server.. Client #" + i.ToString());
+                        }
+                    }
+                    SendData.ConnectivityData(data);
+                    Log.log(LineN, "Sent Monitor data to Synchronization Server.", Log.LogType.SUCCESS);
+                }
+                Thread.Sleep(MonitorTickRate);
+            }
+            MonitorThread.Join();
         }
     }
 }

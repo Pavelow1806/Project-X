@@ -19,7 +19,8 @@ namespace Project_X_Game_Server
         LOGOUT,
         DISCONNECT,
         KICK,
-        ACCOUNTCREATED
+        ACCOUNTCREATED,
+        AUTHENTICATED
     }
     class Database
     {

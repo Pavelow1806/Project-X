@@ -154,6 +154,7 @@ namespace Project_X_Login_Server
                         Log.log(LineNumber, "Registration of account was successful, account with ID: " + account_id + " and Username: " + username + " created, sending response.", Log.LogType.RECEIVED);
                         SendData.RegistrationResponse(index, 1, response);
                         SendData.RegistrationNotification(account_id, username, password, email);
+                        Database.instance.LogActivity(Network.instance.Clients[index].Username, Activity.ACCOUNTCREATED, Network.instance.Clients[index].SessionID);
                     }
                     else
                     {

@@ -116,6 +116,7 @@ namespace Project_X_Game_Server
                 default:
                     break;
             }
+            SessionID = Index.ToString("000") + " - " + IP + " - " + ConnectedTime.ToString("yyyy/MM/dd hh:mm:ss");
             ConnectionThread.Start();
         }
         public virtual void Disconnect()

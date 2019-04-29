@@ -118,19 +118,15 @@ namespace Project_X_Game_Server
             experience = Experience;
         }
 
-        protected override void BuildTransmission(out byte[] result)
+        protected override void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)
         {
-            if (Changed || AnimState.Changed || QuestChanged())
-            {
-                base.BuildTransmission(out result);
+            base.BuildTransmission(ref buffer);
 
-                buffer.WriteInteger(Character_ID);
+            buffer.WriteInteger(Character_ID);
 
-                Changed = false;
-                AnimState.Changed = false;
-                QuestChanged(false);
-            }
-            result = buffer.ToArray();
+            //Changed = false;
+            //AnimState.Changed = false;
+            //QuestChanged(false);
         }
         private int CountQuests()
         {
@@ -154,11 +150,9 @@ namespace Project_X_Game_Server
                 quest.Changed = status;
             }
         }
-        public byte[] GetBuffer()
+        public void BuildBuffer(ref ByteBuffer.ByteBuffer buffer)
         {
-            byte[] result;
-            BuildTransmission(out result);
-            return result;
+            BuildTransmission(ref buffer);
         }
     }
 }
