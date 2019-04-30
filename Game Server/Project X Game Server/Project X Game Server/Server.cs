@@ -76,7 +76,7 @@ namespace Project_X_Game_Server
                 for (int i = 0; i < Network.instance.Clients.Length; i++)
                 {
                     World.instance.BuildBuffer(ref buffer);
-                    if (Network.instance.Clients[i].InGame() && buffer.Count() > 0)
+                    if (Network.instance.Clients[i].InGame())
                     {
                         SendData.SendUDP_Packet(Network.instance.Clients[i], buffer.ToArray());
                     }
