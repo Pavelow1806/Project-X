@@ -44,7 +44,7 @@ namespace Project_X_Game_Server
         {
             get
             {
-                if (NextSpawnTime < DateTime.Now && Current_HP <= 0 && NextSpawnTime != default(DateTime))
+                if (NextSpawnTime < DateTime.Now && NextSpawnTime != default(DateTime))
                 {
                     NextSpawnTime = default(DateTime);
                     Current_HP = Max_HP;
