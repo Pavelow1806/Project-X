@@ -222,7 +222,7 @@ namespace Project_X_Game_Server
                         {
                             data.Add(Clients[i].Character_ID, new Connectivity(Clients[i].Character_ID, Clients[i].TCP_Throughput, Clients[i].TCP_PacketsReceived, Clients[i].TCP_PacketsSent, Clients[i].TCP_Latency,
                                 Clients[i].UDP_Throughput, Clients[i].UDP_PacketsReceived, Clients[i].UDP_PacketsSent, Clients[i].UDP_Latency, Clients[i].LogStart));
-                            //Clients[i].ResetStats();
+                            Clients[i].LogStart = default(DateTime);
                             Log.log(LineN, "Sending Monitor data to Synchronization Server.. Client #" + i.ToString());
                         }
                     }
