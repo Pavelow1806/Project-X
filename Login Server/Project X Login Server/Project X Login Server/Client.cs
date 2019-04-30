@@ -28,6 +28,8 @@ namespace Project_X_Login_Server
 
         public override void Close()
         {
+            if (LoggedIn)
+                Database.instance.LogActivity(Username, Activity.LOGOUT, SessionID);
             Username = "";
             Email = "";
             LoggedIn = false;

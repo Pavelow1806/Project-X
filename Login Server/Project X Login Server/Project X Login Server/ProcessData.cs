@@ -120,6 +120,7 @@ namespace Project_X_Login_Server
                 case Response.SUCCESSFUL:
                     Network.instance.Clients[index].LoggedIn = true;
                     Network.instance.Clients[index].Username = username;
+                    Database.instance.LogActivity(username, Activity.LOGIN, Network.instance.Clients[index].SessionID);
                     SendData.LoginResponse(index, 1);
                     SendData.WhiteListConfirmation(Network.instance.Clients[index].IP);
                     break;

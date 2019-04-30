@@ -62,6 +62,7 @@ namespace Project_X_Login_Server
                     // Connection
                     IP = "";
                     Username = "";
+                    SessionID = "";
                     ConnectedTime = default(DateTime);
 
                     // Network
