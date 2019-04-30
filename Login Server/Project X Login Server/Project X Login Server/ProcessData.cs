@@ -189,7 +189,7 @@ namespace Project_X_Login_Server
                     SendData.CharacterList(index, true);
                     break;
                 case Response.UNSUCCESSFUL:
-                    SendData.CharacterList(index, false);
+                    SendData.CharacterList(index, true);
                     break;
                 case Response.ERROR:
                     SendData.CharacterList(index, false);
