@@ -81,7 +81,6 @@ namespace Project_X_Game_Server
                         SendData.SendUDP_Packet(Network.instance.Clients[i], buffer.ToArray());
                     }
                 }
-                Thread.Sleep(World.TickRate);
             }
             WorldThread.Join();
         }
