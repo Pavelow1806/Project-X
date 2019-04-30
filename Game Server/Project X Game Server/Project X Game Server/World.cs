@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,28 +32,28 @@ namespace Project_X_Game_Server
         }
         private ByteBuffer.ByteBuffer WorldBuffer = null;
 
-        public Dictionary<int, Player> players = new Dictionary<int, Player>();
+        public ConcurrentDictionary<int, Player> players = new ConcurrentDictionary<int, Player>();
         public bool ReceivedPlayers = false;
         public List<Player> playersInWorld = new List<Player>();
 
-        public Dictionary<int, NPC> NPCs = new Dictionary<int, NPC>();
+        public ConcurrentDictionary<int, NPC> NPCs = new ConcurrentDictionary<int, NPC>();
         public bool ReceivedNPCs = false;
         public List<NPC> NPCsInWorld = new List<NPC>();
         
-        public Dictionary<int, Collectable> collectables = new Dictionary<int, Collectable>();
+        public ConcurrentDictionary<int, Collectable> collectables = new ConcurrentDictionary<int, Collectable>();
         public bool ReceivedCollectables = false;
-        public List<Collectable> collectablesInWorld = new List<Collectable>();
+        public ConcurrentBag<Collectable> collectablesInWorld = new ConcurrentBag<Collectable>();
 
-        public Dictionary<int, Spawn> spawns = new Dictionary<int, Spawn>();
+        public ConcurrentDictionary<int, Spawn> spawns = new ConcurrentDictionary<int, Spawn>();
         public bool ReceivedSpawns = false;
 
-        public Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
+        public ConcurrentDictionary<int, Quest> quests = new ConcurrentDictionary<int, Quest>();
         public bool ReceivedQuests = false;
 
-        public List<Quest_Log> quest_log = new List<Quest_Log>();
+        public ConcurrentBag<Quest_Log> quest_log = new ConcurrentBag<Quest_Log>();
         public bool ReceivedQuestLogs = false;
 
-        public Dictionary<int, Experience> experience_levels = new Dictionary<int, Experience>();
+        public ConcurrentDictionary<int, Experience> experience_levels = new ConcurrentDictionary<int, Experience>();
         public bool ReceivedExperience = false;
 
         public World()
@@ -78,7 +79,7 @@ namespace Project_X_Game_Server
             int i_npc = 0;
             NPCsInWorld.Clear();
             int i_col = 0;
-            collectablesInWorld.Clear();
+            collectablesInWorld = new ConcurrentBag<Collectable>();
             // Spawn all NPC's
             foreach (KeyValuePair<int, Spawn> spawn in spawns)
             {
@@ -123,7 +124,7 @@ namespace Project_X_Game_Server
                                 spawn.Value.Rotation_Y
                             )
                         );
-                        collectablesInWorld[i_col].Spawn_ID = spawn.Key;
+                        collectablesInWorld.Last().Spawn_ID = spawn.Key;
                         ++i_col;
                     }
                 }
@@ -199,7 +200,7 @@ namespace Project_X_Game_Server
                             npc.TargetID = -1;
                             npc.TargetType = EntityType.NONE;
                         }
-                        else if (npc.Current_HP <= 0)
+                        else if (npc.Active && npc.Current_HP <= 0)
                         {
                             if (npc.TargetID > -1)
                                 players[npc.TargetID].InCombat = false;

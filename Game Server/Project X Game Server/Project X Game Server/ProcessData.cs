@@ -174,7 +174,7 @@ namespace Project_X_Game_Server
             int Character_ID = buffer.ReadInteger();
             string Name = buffer.ReadString();
             Gender gender = (Gender)buffer.ReadInteger();
-            World.instance.players.Add(Character_ID, new Player(Character_ID, Name, 1, gender,
+            World.instance.players.TryAdd(Character_ID, new Player(Character_ID, Name, 1, gender,
                 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100, 10, 10, 0));
         }
         #endregion
@@ -200,7 +200,7 @@ namespace Project_X_Game_Server
                             int Character_ID = buffer.ReadInteger();
                             if (!World.instance.players.ContainsKey(Character_ID))
                             {
-                                World.instance.players.Add(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), (Gender)buffer.ReadInteger(),
+                                World.instance.players.TryAdd(Character_ID, new Player(Character_ID, buffer.ReadString(), buffer.ReadInteger(), (Gender)buffer.ReadInteger(),
                                     buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
                                     0.0f, 0.0f, 0.0f, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                                 World.instance.players[Character_ID].type = EntityType.Player;
@@ -223,7 +223,7 @@ namespace Project_X_Game_Server
                             int NPC_ID = buffer.ReadInteger();
                             if (!World.instance.NPCs.ContainsKey(NPC_ID))
                             {
-                                World.instance.NPCs.Add(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadInteger(),
+                                World.instance.NPCs.TryAdd(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadInteger(),
                                     (Gender)buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added NPC " + i.ToString() + "/" + NPC_Count.ToString(), Log.LogType.RECEIVED);
@@ -240,7 +240,7 @@ namespace Project_X_Game_Server
                             int Quest_ID = buffer.ReadInteger();
                             if (!World.instance.quests.ContainsKey(Quest_ID))
                             {
-                                World.instance.quests.Add(Quest_ID, new Quest(Quest_ID, buffer.ReadString(), buffer.ReadString(), buffer.ReadString(),
+                                World.instance.quests.TryAdd(Quest_ID, new Quest(Quest_ID, buffer.ReadString(), buffer.ReadString(), buffer.ReadString(),
                                     buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added quest " + i.ToString() + "/" + Quest_Count.ToString(), Log.LogType.RECEIVED);
@@ -257,7 +257,7 @@ namespace Project_X_Game_Server
                             int Collectable_ID = buffer.ReadInteger();
                             if (!World.instance.collectables.ContainsKey(Collectable_ID))
                             {
-                                World.instance.collectables.Add(Collectable_ID, new Collectable(Collectable_ID, buffer.ReadString(), buffer.ReadInteger(), 0.0f, 0.0f, 0.0f, 0.0f));
+                                World.instance.collectables.TryAdd(Collectable_ID, new Collectable(Collectable_ID, buffer.ReadString(), buffer.ReadInteger(), 0.0f, 0.0f, 0.0f, 0.0f));
                             }                                
                             Log.log(LineNumber, "Processing world request packet.. Added collectable " + i.ToString() + "/" + Collectable_Count.ToString(), Log.LogType.RECEIVED);
                         }
@@ -273,7 +273,7 @@ namespace Project_X_Game_Server
                             int Spawn_ID = buffer.ReadInteger();
                             if (!World.instance.spawns.ContainsKey(Spawn_ID))
                             {
-                                World.instance.spawns.Add(Spawn_ID, new Spawn(Spawn_ID, buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
+                                World.instance.spawns.TryAdd(Spawn_ID, new Spawn(Spawn_ID, buffer.ReadFloat(), buffer.ReadFloat(), buffer.ReadFloat(),
                                     buffer.ReadFloat(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added spawn " + i.ToString() + "/" + Spawn_Count.ToString(), Log.LogType.RECEIVED);
@@ -306,7 +306,7 @@ namespace Project_X_Game_Server
                             int XP_ID = buffer.ReadInteger();
                             if (!World.instance.experience_levels.ContainsKey(XP_ID))
                             {
-                                World.instance.experience_levels.Add(XP_ID, new Experience(XP_ID, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                                World.instance.experience_levels.TryAdd(XP_ID, new Experience(XP_ID, buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added experience " + i.ToString() + "/" + Experience_Count.ToString(), Log.LogType.RECEIVED);
                         }

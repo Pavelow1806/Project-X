@@ -15,23 +15,23 @@ namespace Project_X_Synchronization_Server
     {
         #region Table Storage
         // Accounts table
-        public static Dictionary<int, _Accounts> tbl_Accounts = new Dictionary<int, _Accounts>();
+        public static ConcurrentDictionary<int, _Accounts> tbl_Accounts = new ConcurrentDictionary<int, _Accounts>();
         //Activity table
-        public static List<_Activity> tbl_Activity = new List<_Activity>();
+        public static ConcurrentBag<_Activity> tbl_Activity = new ConcurrentBag<_Activity>();
         // Characters table
-        public static Dictionary<int, _Characters> tbl_Characters = new Dictionary<int, _Characters>();
+        public static ConcurrentDictionary<int, _Characters> tbl_Characters = new ConcurrentDictionary<int, _Characters>();
         // Quests table
-        public static Dictionary<int, _Quests> tbl_Quests = new Dictionary<int, _Quests>();
+        public static ConcurrentDictionary<int, _Quests> tbl_Quests = new ConcurrentDictionary<int, _Quests>();
         // Quest Log table
-        public static Dictionary<int, _Quest_Log> tbl_Quest_Log = new Dictionary<int, _Quest_Log>();
+        public static ConcurrentDictionary<int, _Quest_Log> tbl_Quest_Log = new ConcurrentDictionary<int, _Quest_Log>();
         // NPC table
-        public static Dictionary<int, _NPC> tbl_NPC = new Dictionary<int, _NPC>();
+        public static ConcurrentDictionary<int, _NPC> tbl_NPC = new ConcurrentDictionary<int, _NPC>();
         // Collectable table
-        public static Dictionary<int, _Collectables> tbl_Collectables = new Dictionary<int, _Collectables>();
+        public static ConcurrentDictionary<int, _Collectables> tbl_Collectables = new ConcurrentDictionary<int, _Collectables>();
         // Spawn Position table
-        public static Dictionary<int, _Spawn_Positions> tbl_Spawn_Positions = new Dictionary<int, _Spawn_Positions>();
+        public static ConcurrentDictionary<int, _Spawn_Positions> tbl_Spawn_Positions = new ConcurrentDictionary<int, _Spawn_Positions>();
         // Experience table
-        public static Dictionary<int, _Experience> tbl_Experience = new Dictionary<int, _Experience>();
+        public static ConcurrentDictionary<int, _Experience> tbl_Experience = new ConcurrentDictionary<int, _Experience>();
         // Connectivity table
         public static ConcurrentBag<_Connectivity> tbl_Connectivity = new ConcurrentBag<_Connectivity>();
         #endregion

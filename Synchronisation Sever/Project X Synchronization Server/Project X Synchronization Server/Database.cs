@@ -196,7 +196,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Accounts.Add(reader.GetInt32("Account_ID"), new _Accounts(reader.GetInt32("Account_ID"), reader.GetString("Username"), reader.GetString("Email"), reader.GetString("Password"), reader.GetBoolean("Logged_In")));
+                    Data.tbl_Accounts.TryAdd(reader.GetInt32("Account_ID"), new _Accounts(reader.GetInt32("Account_ID"), reader.GetString("Username"), reader.GetString("Email"), reader.GetString("Password"), reader.GetBoolean("Logged_In")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -242,7 +242,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Characters.Add(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"), reader.GetInt32("Gender"),
+                    Data.tbl_Characters.TryAdd(reader.GetInt32("Character_ID"), new _Characters(reader.GetInt32("Character_ID"), reader.GetInt32("Account_ID"), reader.GetString("Character_Name"), reader.GetInt32("Character_Level"), reader.GetInt32("Gender"),
                         reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
                         reader.GetFloat("Camera_Pos_X"), reader.GetFloat("Camera_Pos_Y"), reader.GetFloat("Camera_Pos_Z"), reader.GetFloat("Camera_Rotation_Y"), 
                         reader.GetInt32("Health"), reader.GetInt32("Strength"), reader.GetInt32("Agility"), reader.GetInt32("Experience")));
@@ -268,7 +268,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Quests.Add(reader.GetInt32("Quest_ID"), new _Quests(reader.GetInt32("Quest_ID"), reader.GetString("Title"), reader.GetString("Start_Text"), reader.GetString("End_Text"),
+                    Data.tbl_Quests.TryAdd(reader.GetInt32("Quest_ID"), new _Quests(reader.GetInt32("Quest_ID"), reader.GetString("Title"), reader.GetString("Start_Text"), reader.GetString("End_Text"),
                         reader.GetInt32("Reward_ID"), reader.GetInt32("NPC_Start_ID"), reader.GetInt32("NPC_End_ID"), reader.GetInt32("Objective_Target"), reader.GetInt32("Start_Requirement_Quest_ID"),
                         reader.GetInt32("Item_Objective_ID"), reader.GetInt32("NPC_Objective_ID")));
                     ++RecordNumber;
@@ -293,7 +293,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Quest_Log.Add(reader.GetInt32("Log_ID"), new _Quest_Log(reader.GetInt32("Log_ID"), reader.GetInt32("Character_ID"), 
+                    Data.tbl_Quest_Log.TryAdd(reader.GetInt32("Log_ID"), new _Quest_Log(reader.GetInt32("Log_ID"), reader.GetInt32("Character_ID"), 
                         reader.GetInt32("Quest_ID"), reader.GetInt32("Quest_Status"), reader.GetInt32("Progress")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
@@ -317,7 +317,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_NPC.Add(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
+                    Data.tbl_NPC.TryAdd(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
                         reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time"), reader.GetInt32("Strength"), reader.GetInt32("Agility")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
@@ -341,7 +341,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Collectables.Add(reader.GetInt32("Collectable_ID"), new _Collectables(reader.GetInt32("Collectable_ID"), reader.GetString("Collectable_Name"),
+                    Data.tbl_Collectables.TryAdd(reader.GetInt32("Collectable_ID"), new _Collectables(reader.GetInt32("Collectable_ID"), reader.GetString("Collectable_Name"),
                         reader.GetInt32("Respawn_Time")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
@@ -365,7 +365,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Spawn_Positions.Add(reader.GetInt32("Position_ID"), new _Spawn_Positions(reader.GetInt32("Position_ID"),
+                    Data.tbl_Spawn_Positions.TryAdd(reader.GetInt32("Position_ID"), new _Spawn_Positions(reader.GetInt32("Position_ID"),
                         reader.GetFloat("Pos_X"), reader.GetFloat("Pos_Y"), reader.GetFloat("Pos_Z"), reader.GetFloat("Rotation_Y"),
                         reader.GetInt32("NPC_ID"), reader.GetInt32("Collectable_ID")));
                     ++RecordNumber;
@@ -390,7 +390,7 @@ namespace Project_X_Synchronization_Server
                 SubLineNumber = -1;
                 while (reader.Read())
                 {
-                    Data.tbl_Experience.Add(reader.GetInt32("XP_ID"), new _Experience(reader.GetInt32("XP_ID"), reader.GetInt32("Level"), reader.GetInt32("Experience"),
+                    Data.tbl_Experience.TryAdd(reader.GetInt32("XP_ID"), new _Experience(reader.GetInt32("XP_ID"), reader.GetInt32("Level"), reader.GetInt32("Experience"),
                         reader.GetInt32("Strength"), reader.GetInt32("Agility"), reader.GetInt32("HP")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)

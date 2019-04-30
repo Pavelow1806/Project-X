@@ -156,7 +156,7 @@ namespace Project_X_Synchronization_Server
             {
                 ql = new _Quest_Log(-1, Character_ID, Quest_ID, Quest_Status, 0);
                 ql.Log_ID = Database.instance.Insert_Record("CALL CreateQuestLog(" + Quest_ID + ", " + Character_ID + ", 0, " + Quest_Status + ");");
-                Data.tbl_Quest_Log.Add(ql.Log_ID, ql);
+                Data.tbl_Quest_Log.TryAdd(ql.Log_ID, ql);
             }
         }
         private static void CreateQuestLog(ConnectionType type, byte[] data)
@@ -171,7 +171,7 @@ namespace Project_X_Synchronization_Server
             int Log_ID = Database.instance.Insert_Record("CALL CreateQuestLog(" + Quest_ID + ", " + Character_ID + ", 0, " + Status + ");");
             if (!Data.tbl_Quest_Log.ContainsKey(Log_ID))
             {
-                Data.tbl_Quest_Log.Add(Log_ID, new _Quest_Log(Log_ID, Character_ID, Quest_ID, Status, Progress));
+                Data.tbl_Quest_Log.TryAdd(Log_ID, new _Quest_Log(Log_ID, Character_ID, Quest_ID, Status, Progress));
             }
             else
             {
@@ -239,7 +239,7 @@ namespace Project_X_Synchronization_Server
             string Password = buffer.ReadString();
             string Email = buffer.ReadString();
 
-            Data.tbl_Accounts.Add(Account_ID, new _Accounts(Account_ID, Username, Email, Password, false));
+            Data.tbl_Accounts.TryAdd(Account_ID, new _Accounts(Account_ID, Username, Email, Password, false));
         }
         private static void CreateCharacterResponse(ConnectionType type, byte[] data)
         {
@@ -252,7 +252,7 @@ namespace Project_X_Synchronization_Server
             int Gender = buffer.ReadInteger();
             string Username = buffer.ReadString();
 
-            Data.tbl_Characters.Add(Character_ID, new _Characters(Character_ID, Data.GetAccountID(Username), Name, 1, Gender,
+            Data.tbl_Characters.TryAdd(Character_ID, new _Characters(Character_ID, Data.GetAccountID(Username), Name, 1, Gender,
                 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100, 10, 10, 0));
         }
         #endregion
