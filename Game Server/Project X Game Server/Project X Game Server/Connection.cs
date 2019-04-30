@@ -242,6 +242,7 @@ namespace Project_X_Game_Server
                     else
                     {
                         Socket.NoDelay = true;
+                        Socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
                         Stream = Socket.GetStream();
                         Stream.BeginRead(ReadBuff, 0, Network.BufferSize * 2, OnReceive, null);
                         ConnectedTime = DateTime.Now;

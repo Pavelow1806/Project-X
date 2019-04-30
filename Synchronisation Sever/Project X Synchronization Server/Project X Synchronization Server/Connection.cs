@@ -123,6 +123,7 @@ namespace Project_X_Synchronization_Server
                 Socket.ReceiveBufferSize = Network.BufferSize;
                 Socket.SendBufferSize = Network.BufferSize;
                 Socket.NoDelay = false;
+                Socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
                 Array.Resize(ref asyncBuff, Network.BufferSize * 2);
                 Socket.BeginConnect(IP, Port, new AsyncCallback(ConnectCallback), Socket);
             }

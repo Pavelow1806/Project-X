@@ -82,6 +82,7 @@ namespace Project_X_Game_Server
                 {
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
                 }
+                Listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
                 Listener.Start();
                 StartAccept();
                 Log.log(LineNumber, "Client/Synchronization Listener started.", Log.LogType.SUCCESS);

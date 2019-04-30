@@ -76,6 +76,7 @@ namespace Project_X_Login_Server
                 {
                     Clients[i] = new Client(ConnectionType.CLIENT, i);
                 }
+                Listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
                 Listener.Start();
                 StartAccept();
             }
