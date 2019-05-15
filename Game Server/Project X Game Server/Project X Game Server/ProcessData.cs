@@ -399,37 +399,40 @@ namespace Project_X_Game_Server
                 EntityType TargetType = (EntityType)buffer.ReadInteger();
                 int TargetID = buffer.ReadInteger();
 
-                Player player = World.instance.players[Character_ID];
-                // Position
-                player.x = X;
-                player.y = Y;
-                player.z = Z;
-                player.r = R;
-                // Velocity
-                player.vx = vx;
-                player.vy = vy;
-                player.vz = vz;
-                // Camera Position and Rotation
-                player.Camera_Pos_X = cX;
-                player.Camera_Pos_Y = cY;
-                player.Camera_Pos_Z = cZ;
-                player.Camera_Rotation_Y = cR;
-                // Animations
-                player.AnimState.Forward = Forward;
-                player.AnimState.Turn = Turn;
-                player.AnimState.Jump = Jump;
-                player.AnimState.JumpLeg = JumpLeg;
-                player.AnimState.Crouch = Crouch;
-                player.AnimState.OnGround = OnGround;
-                player.AnimState.Attacking = Attacking;
-                player.AnimState.Dead = Dead;
-                player.AnimState.Attacked = Attacked;
-                player.AnimState.Cast = Cast;
-                // Target
-                player.TargetType = TargetType;
-                player.TargetID = TargetID;
+                if (World.instance.players.ContainsKey(Character_ID))
+                {
+                    Player player = World.instance.players[Character_ID];
+                    // Position
+                    player.position.x = X;
+                    player.position.y = Y;
+                    player.position.z = Z;
+                    player.r = R;
+                    // Velocity
+                    player.vx = vx;
+                    player.vy = vy;
+                    player.vz = vz;
+                    // Camera Position and Rotation
+                    player.Camera_Pos_X = cX;
+                    player.Camera_Pos_Y = cY;
+                    player.Camera_Pos_Z = cZ;
+                    player.Camera_Rotation_Y = cR;
+                    // Animations
+                    player.AnimState.Forward = Forward;
+                    player.AnimState.Turn = Turn;
+                    player.AnimState.Jump = Jump;
+                    player.AnimState.JumpLeg = JumpLeg;
+                    player.AnimState.Crouch = Crouch;
+                    player.AnimState.OnGround = OnGround;
+                    player.AnimState.Attacking = Attacking;
+                    player.AnimState.Dead = Dead;
+                    player.AnimState.Attacked = Attacked;
+                    player.AnimState.Cast = Cast;
+                    // Target
+                    player.TargetType = TargetType;
+                    player.TargetID = TargetID;
+                    SendData.UpdatePlayerData(player);
+                }
 
-                SendData.UpdatePlayerData(player);
             }
         }
         private static void RequestQuest(ConnectionType type, int index, byte[] data)
@@ -575,8 +578,9 @@ namespace Project_X_Game_Server
             {
                 if (MathF.Distance(player, npc) <= World.InteractionDistance && 
                     (npc.Status == NPCStatus.AGGRESSIVE || npc.Status == NPCStatus.NEUTRAL || npc.Status == NPCStatus.BOSS) &&
-                    npc.Current_HP > 0)
+                    npc.Current_HP > 0 && DateTime.Now > player.NextAttack)
                 {
+                    player.NextAttack = DateTime.Now.AddSeconds(World.GlobalAttackSpeed);
                     player.InCombat = true;
                     npc.InCombat = true;
                     npc.TargetType = EntityType.Player;
@@ -640,9 +644,9 @@ namespace Project_X_Game_Server
             {
                 World.instance.players[Network.instance.Clients[index].Character_ID].Respawn();
                 SendData.Respawned(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP,
-                    World.instance.players[Network.instance.Clients[index].Character_ID].x,
-                    World.instance.players[Network.instance.Clients[index].Character_ID].y,
-                    World.instance.players[Network.instance.Clients[index].Character_ID].z,
+                    World.instance.players[Network.instance.Clients[index].Character_ID].position.x,
+                    World.instance.players[Network.instance.Clients[index].Character_ID].position.y,
+                    World.instance.players[Network.instance.Clients[index].Character_ID].position.z,
                     World.instance.players[Network.instance.Clients[index].Character_ID].r);
             }
         }
@@ -674,25 +678,5 @@ namespace Project_X_Game_Server
             SendData.Heal(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP, World.HealAmount);
         }
         #endregion
-    }
-    public class MathF
-    {
-        public static float Distance(Entity e1, Entity e2)
-        {
-            if (e1 == null || e2 == null)
-            {
-                return 999.0f;
-            }
-            //return (float)Math.Sqrt((e2.x - e1.x) * (e2.x - e1.x) + (e2.x - e1.y) * (e2.y - e1.y) + (e2.z - e1.z) * (e2.z - e1.z));
-            return (float)Math.Sqrt((e2.x - e1.x) * (e2.x - e1.x) + (e2.z - e1.z) * (e2.z - e1.z));
-        }
-        public static int Damage(int Strength, int Agility, int BloodMultiplier)
-        {
-            Random random = new Random();
-
-            int RandDamage = random.Next((int)(Strength * 1.0f), (int)(Strength * 2.0f));
-            bool Crit = (random.Next(0, 100) >= 50 - Agility ? true : false);
-            return (Crit ? (RandDamage * BloodMultiplier) : (RandDamage * 2 * BloodMultiplier));
-        }
     }
 }

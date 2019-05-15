@@ -37,7 +37,7 @@ namespace Project_X_Login_Server
         {
             while (DateTime.Now < TimeUntilRelease || !Authenticated)
             {
-
+                Thread.Sleep(50);
             }
             if (Authenticated)
             {

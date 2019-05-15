@@ -176,9 +176,9 @@ namespace Project_X_Game_Server
                 // ID
                 buffer.WriteInteger(player.Character_ID);
                 // Position
-                buffer.WriteFloat(player.x);
-                buffer.WriteFloat(player.y);
-                buffer.WriteFloat(player.z);
+                buffer.WriteFloat(player.position.x);
+                buffer.WriteFloat(player.position.y);
+                buffer.WriteFloat(player.position.z);
                 buffer.WriteFloat(player.r);
                 // Camera Position
                 buffer.WriteFloat(player.Camera_Pos_X);
@@ -315,9 +315,9 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(player.Level);
                 buffer.WriteInteger(player.Current_HP);
                 buffer.WriteInteger(player.Max_HP);
-                buffer.WriteFloat(player.x);
-                buffer.WriteFloat(player.y);
-                buffer.WriteFloat(player.z);
+                buffer.WriteFloat(player.position.x);
+                buffer.WriteFloat(player.position.y);
+                buffer.WriteFloat(player.position.z);
                 buffer.WriteFloat(player.r);
             }
             sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
@@ -341,9 +341,9 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(npc.Level);
                 buffer.WriteInteger(npc.Current_HP);
                 buffer.WriteInteger(npc.Max_HP);
-                buffer.WriteFloat(npc.x);
-                buffer.WriteFloat(npc.y);
-                buffer.WriteFloat(npc.z);
+                buffer.WriteFloat(npc.position.x);
+                buffer.WriteFloat(npc.position.y);
+                buffer.WriteFloat(npc.position.z);
                 buffer.WriteFloat(npc.r);
                 buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
             }
@@ -364,9 +364,9 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(collectable.Entity_ID);
                 buffer.WriteString(collectable.Name);
                 buffer.WriteInteger(collectable.Respawn_Time);
-                buffer.WriteFloat(collectable.x);
-                buffer.WriteFloat(collectable.y);
-                buffer.WriteFloat(collectable.z);
+                buffer.WriteFloat(collectable.position.x);
+                buffer.WriteFloat(collectable.position.y);
+                buffer.WriteFloat(collectable.position.z);
                 buffer.WriteFloat(collectable.r);
                 buffer.WriteByte((collectable.Active) ? (byte)1 : (byte)0);
             }
@@ -416,9 +416,9 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(Character.Level);
                 buffer.WriteInteger((int)Character.gender);
                 // Position
-                buffer.WriteFloat(Character.x);
-                buffer.WriteFloat(Character.y);
-                buffer.WriteFloat(Character.z);
+                buffer.WriteFloat(Character.position.x);
+                buffer.WriteFloat(Character.position.y);
+                buffer.WriteFloat(Character.position.z);
                 buffer.WriteFloat(Character.r);
                 // Camera Position
                 buffer.WriteFloat(Character.Camera_Pos_X);
@@ -480,9 +480,9 @@ namespace Project_X_Game_Server
                         buffer.WriteInteger(player.Level);
                         buffer.WriteInteger(player.Current_HP);
                         buffer.WriteInteger(player.Max_HP);
-                        buffer.WriteFloat(player.x);
-                        buffer.WriteFloat(player.y);
-                        buffer.WriteFloat(player.z);
+                        buffer.WriteFloat(player.position.x);
+                        buffer.WriteFloat(player.position.y);
+                        buffer.WriteFloat(player.position.z);
                         buffer.WriteFloat(player.r);
                         break;
                     case PlayerState.Logout:

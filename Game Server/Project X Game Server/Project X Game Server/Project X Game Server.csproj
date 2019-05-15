@@ -69,6 +69,7 @@
     <Compile Include="Entity.cs" />
     <Compile Include="Experience.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="MathF.cs" />
     <Compile Include="Network.cs" />
     <Compile Include="NPC.cs" />
     <Compile Include="Player.cs" />

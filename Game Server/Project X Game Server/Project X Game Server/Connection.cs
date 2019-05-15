@@ -180,6 +180,7 @@ namespace Project_X_Game_Server
                     Connect();
                     NextConnectAttempt = DateTime.Now.AddSeconds(SecondsBetweenConnectionAttempts);
                 }
+                Thread.Sleep(50);
             }
             if (Connected)
             {

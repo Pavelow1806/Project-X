@@ -102,9 +102,9 @@ namespace Project_X_Game_Server
                                 NPCs[spawn.Value.NPC_ID].Agility
                             )
                         );
-                        NPCsInWorld[i_npc].x = spawn.Value.Pos_X;
-                        NPCsInWorld[i_npc].y = spawn.Value.Pos_Y;
-                        NPCsInWorld[i_npc].z = spawn.Value.Pos_Z;
+                        NPCsInWorld[i_npc].position.x = spawn.Value.Pos_X;
+                        NPCsInWorld[i_npc].position.y = spawn.Value.Pos_Y;
+                        NPCsInWorld[i_npc].position.z = spawn.Value.Pos_Z;
                         NPCsInWorld[i_npc].r = spawn.Value.Rotation_Y;
                         NPCsInWorld[i_npc].Spawn_ID = spawn.Key;
                         ++i_npc;
@@ -136,6 +136,49 @@ namespace Project_X_Game_Server
             {
                 try
                 {
+                    foreach (NPC npc in NPCsInWorld)
+                    {
+                        if (npc.Active && npc.Current_HP <= 0)
+                        {
+                            if (npc.TargetID > -1)
+                                players[npc.TargetID].InCombat = false;
+                            npc.InCombat = false;
+                            npc.TargetID = -1;
+                            npc.r = spawns[npc.Spawn_ID].Rotation_Y;
+                            npc.TargetType = EntityType.NONE;
+                            npc.Active = false;
+                        }
+                        else if (npc.TargetID > -1 && npc.Current_HP > 0 && npc.Active)
+                        {
+                            if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) <= InteractionDistance)
+                            {
+                                if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 &&
+                                    players[npc.TargetID].Current_HP > 0)
+                                {
+                                    int Damage = MathF.Damage(npc.Strength, npc.Agility, npc.BloodMultiplier);
+                                    players[npc.TargetID].Current_HP -= Damage;
+                                    SendData.Attacked(Network.instance.GetIndex(npc.TargetID), players[npc.TargetID].Current_HP, Damage);
+                                    npc.NextAttack = DateTime.Now.AddSeconds(GlobalAttackSpeed);
+                                    MathF.LookAt(npc, players[npc.TargetID]);
+                                }
+                            }
+                            else if (!players[npc.TargetID].InWorld || (npc.InCombat && MathF.Distance(npc, players[npc.TargetID]) > InteractionDistance))
+                            {
+                                players[npc.TargetID].InCombat = false;
+                                npc.InCombat = false;
+                                npc.r = spawns[npc.Spawn_ID].Rotation_Y;
+                                npc.TargetID = -1;
+                                npc.TargetType = EntityType.NONE;
+                            }
+                        }
+                        else if (npc.TargetID == -1 && npc.Active)
+                        {
+                            npc.InCombat = false;
+                            npc.r = spawns[npc.Spawn_ID].Rotation_Y;
+                            npc.TargetID = -1;
+                            npc.TargetType = EntityType.NONE;
+                        }
+                    }
                     if (DateTime.Now >= NextTick)
                     {
                         foreach (NPC npc in NPCsInWorld)
@@ -170,45 +213,6 @@ namespace Project_X_Game_Server
                             }
                         }
                         NextTick = DateTime.Now.AddSeconds(5);
-                    }
-                    foreach (NPC npc in NPCsInWorld)
-                    {
-                        if (npc.TargetID > -1 && npc.Current_HP > 0 && npc.Active)
-                        {
-                            if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) <= InteractionDistance)
-                            {
-                                if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 &&
-                                    players[npc.TargetID].Current_HP > 0)
-                                {
-                                    int Damage = MathF.Damage(npc.Strength, npc.Agility, npc.BloodMultiplier);
-                                    players[npc.TargetID].Current_HP -= Damage;
-                                    SendData.Attacked(Network.instance.GetIndex(npc.TargetID), players[npc.TargetID].Current_HP, Damage);
-                                    npc.NextAttack = DateTime.Now.AddSeconds(GlobalAttackSpeed);
-                                }
-                            }
-                            else if (!players[npc.TargetID].InWorld || (npc.InCombat && MathF.Distance(npc, players[npc.TargetID]) > InteractionDistance))
-                            {
-                                players[npc.TargetID].InCombat = false;
-                                npc.InCombat = false;
-                                npc.TargetID = -1;
-                                npc.TargetType = EntityType.NONE;
-                            }
-                        }
-                        else if (npc.TargetID == -1 && npc.Active)
-                        {
-                            npc.InCombat = false;
-                            npc.TargetID = -1;
-                            npc.TargetType = EntityType.NONE;
-                        }
-                        else if (npc.Active && npc.Current_HP <= 0)
-                        {
-                            if (npc.TargetID > -1)
-                                players[npc.TargetID].InCombat = false;
-                            npc.InCombat = false;
-                            npc.TargetID = -1;
-                            npc.TargetType = EntityType.NONE;
-                            npc.Active = false;
-                        }
                     }
                     foreach (Player p in playersInWorld)
                     {

@@ -46,11 +46,12 @@ namespace Project_X_Game_Server
             {
                 if (NextSpawnTime < DateTime.Now && NextSpawnTime != default(DateTime))
                 {
+                    Log.log("Entity: " + Name + " with ID: " + Entity_ID.ToString() + " has become active.", Log.LogType.GENERAL);
                     NextSpawnTime = default(DateTime);
                     Current_HP = Max_HP;
                     return true;
                 }
-                else if (NextSpawnTime < DateTime.Now && Current_HP > 0)
+                else if (NextSpawnTime < DateTime.Now)
                 {
                     return true;
                 }
@@ -63,6 +64,7 @@ namespace Project_X_Game_Server
             {
                 if (value == false)
                 {
+                    Log.log("Entity: " + Name + " with ID: " + Entity_ID.ToString() + " has become non-active.", Log.LogType.GENERAL);
                     NextSpawnTime = DateTime.Now.AddSeconds(Respawn_Time);
                 }
             }

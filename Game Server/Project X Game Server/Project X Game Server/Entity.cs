@@ -68,53 +68,19 @@ namespace Project_X_Game_Server
 
         public Gender gender;
 
-        private float _x = 0.0f;
-        public float x
+        private Vector3 _position = new Vector3();
+        public Vector3 position
         {
             get
             {
-                return _x;
+                return _position;
             }
             set
             {
-                if (value != _x)
+                if (_position != value)
                 {
                     Changed = true;
-                    _x = value;
-                }
-            }
-        }
-
-        private float _y = 0.0f;
-        public float y
-        {
-            get
-            {
-                return _y;
-            }
-            set
-            {
-                if (value != _y)
-                {
-                    Changed = true;
-                    _y = value;
-                }
-            }
-        }
-
-        private float _z = 0.0f;
-        public float z
-        {
-            get
-            {
-                return _z;
-            }
-            set
-            {
-                if (value != _z)
-                {
-                    Changed = true;
-                    _z = value;
+                    _position = value;
                 }
             }
         }
@@ -305,9 +271,9 @@ namespace Project_X_Game_Server
             _Name = name;
             _Level = level;
             gender = _gender;
-            _x = x;
-            _y = y;
-            _z = z;
+            _position.x = x;
+            _position.y = y;
+            _position.z = z;
             _r = r;
             _vx = vX;
             _vy = vY;
@@ -323,9 +289,9 @@ namespace Project_X_Game_Server
             Current_HP = Max_HP;
             if (type == EntityType.Player)
             {
-                x = 0.0f;
-                y = 0.0f;
-                z = 0.0f;
+                position.x = 0.0f;
+                position.y = 0.0f;
+                position.z = 0.0f;
                 r = 0.0f;
                 vx = 0.0f;
                 vy = 0.0f;
@@ -337,9 +303,9 @@ namespace Project_X_Game_Server
         protected virtual void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)
         {
             buffer.WriteInteger(Entity_ID);
-            buffer.WriteFloat(_x);
-            buffer.WriteFloat(_y);
-            buffer.WriteFloat(_z);
+            buffer.WriteFloat(_position.x);
+            buffer.WriteFloat(_position.y);
+            buffer.WriteFloat(_position.z);
             buffer.WriteFloat(_r);
             buffer.WriteFloat(_vx);
             buffer.WriteFloat(_vy);
