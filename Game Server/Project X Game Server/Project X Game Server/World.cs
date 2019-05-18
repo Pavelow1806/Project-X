@@ -14,12 +14,17 @@ namespace Project_X_Game_Server
 
         public bool Running = false;
         private Thread UpdateThread;
+        public static float MovementSpeed = 5.0f;
         public static float GlobalAttackSpeed = 2.0f;
-        public static float InteractionDistance = 15.0f;
+        public static float InteractionDistance = 7.5f;
+        public static float ChaseDistance = 5.0f;
+        public static float ResetDistance = 20.0f;
         public static int TickRate = 10;
         public static int HealthRegenPer5 = 1;
         public static int HealAmount = 20;
-        public static int StompDamage = 20;
+        public static int StompMinDamage = 10;
+        public static int StompMaxDamage = 20;
+        public static int StompCritChance = 20;
         public static int BloodDamageIncrease = 20;
         private static DateTime NextTick = default(DateTime);
         private int entityCounter = 0;
@@ -134,6 +139,7 @@ namespace Project_X_Game_Server
             NextTick = DateTime.Now.AddSeconds(5);
             while (Running)
             {
+                float dt = MathF.deltaTime;
                 try
                 {
                     foreach (NPC npc in NPCsInWorld)
@@ -150,7 +156,7 @@ namespace Project_X_Game_Server
                         }
                         else if (npc.TargetID > -1 && npc.Current_HP > 0 && npc.Active)
                         {
-                            if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) <= InteractionDistance)
+                            if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) <= ChaseDistance && MathF.Distance(npc, npc.spawn) <= ResetDistance)
                             {
                                 if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 &&
                                     players[npc.TargetID].Current_HP > 0)
@@ -163,13 +169,30 @@ namespace Project_X_Game_Server
                                     MathF.LookAt(npc, players[npc.TargetID]);
                                 }
                             }
-                            else if (!players[npc.TargetID].InWorld || (npc.InCombat && MathF.Distance(npc, players[npc.TargetID]) > InteractionDistance))
+                            else if (npc.InCombat && players[npc.TargetID].InWorld && MathF.Distance(npc, players[npc.TargetID]) > ChaseDistance && MathF.Distance(npc, npc.spawn) <= ResetDistance)
+                            {
+                                float step = MovementSpeed * dt;
+                                MathF.MoveTowards(npc, players[npc.TargetID], step);
+                            }
+                            else if (!players[npc.TargetID].InWorld && npc.InCombat && (MathF.Distance(npc, players[npc.TargetID]) > ResetDistance || MathF.Distance(npc, npc.spawn) > ResetDistance))
                             {
                                 players[npc.TargetID].InCombat = false;
                                 npc.InCombat = false;
                                 npc.r = spawns[npc.Spawn_ID].Rotation_Y;
                                 npc.TargetID = -1;
                                 npc.TargetType = EntityType.NONE;
+                                float step = MovementSpeed * dt;
+                                MathF.MoveTowards(npc, npc.spawn, step);
+                            }
+                            else
+                            {
+                                players[npc.TargetID].InCombat = false;
+                                npc.InCombat = false;
+                                npc.r = spawns[npc.Spawn_ID].Rotation_Y;
+                                npc.TargetID = -1;
+                                npc.TargetType = EntityType.NONE;
+                                float step = MovementSpeed * dt;
+                                MathF.MoveTowards(npc, npc.spawn, step);
                             }
                         }
                         else if (npc.TargetID == -1 && npc.Active)
@@ -178,6 +201,8 @@ namespace Project_X_Game_Server
                             npc.r = spawns[npc.Spawn_ID].Rotation_Y;
                             npc.TargetID = -1;
                             npc.TargetType = EntityType.NONE;
+                            float step = MovementSpeed * dt;
+                            MathF.MoveTowards(npc, npc.spawn, step);
                         }
                     }
                     if (DateTime.Now >= NextTick)

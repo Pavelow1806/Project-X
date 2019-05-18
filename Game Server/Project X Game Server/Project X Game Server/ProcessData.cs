@@ -664,8 +664,21 @@ namespace Project_X_Game_Server
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteBytes(data);
             ReadHeader(ref buffer);
-            if (Network.instance.Clients[index].Character_ID > -1)
-                World.instance.NPCsInWorld[World.instance.players[Network.instance.Clients[index].Character_ID].TargetID].Current_HP -= World.StompDamage;
+            List<DamageResponse> result = new List<DamageResponse>();
+            foreach (NPC npc in World.instance.NPCsInWorld)
+            {
+                if (npc.Status != NPCStatus.FRIENDLY && MathF.Distance(npc, World.instance.players[Network.instance.Clients[index].Character_ID]) <= World.InteractionDistance)
+                {
+                    bool crit = false;
+                    int dmg = MathF.SpellDamage(World.StompMinDamage, World.StompMaxDamage, World.StompCritChance, out crit);
+                    npc.Current_HP -= dmg;
+                    result.Add(new DamageResponse(npc.Entity_ID, dmg, crit, npc.Current_HP));
+                }
+            }
+            if (Network.instance.Clients[index].Version != "")
+            {
+                SendData.StompResponse(index, result);
+            }            
         }
         private static void Blood(ConnectionType type, int index, byte[] data)
         {

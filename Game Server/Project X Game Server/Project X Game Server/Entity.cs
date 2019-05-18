@@ -84,6 +84,7 @@ namespace Project_X_Game_Server
                 }
             }
         }
+        public Vector3 spawn = new Vector3();
 
         private float _r = 0.0f;
         public float r
@@ -274,6 +275,7 @@ namespace Project_X_Game_Server
             _position.x = x;
             _position.y = y;
             _position.z = z;
+            spawn = _position;
             _r = r;
             _vx = vX;
             _vy = vY;

@@ -49,6 +49,7 @@ namespace Project_X_Game_Server
                     Log.log("Entity: " + Name + " with ID: " + Entity_ID.ToString() + " has become active.", Log.LogType.GENERAL);
                     NextSpawnTime = default(DateTime);
                     Current_HP = Max_HP;
+                    position = spawn;
                     return true;
                 }
                 else if (NextSpawnTime < DateTime.Now)

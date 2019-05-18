@@ -24,7 +24,8 @@ namespace Project_X_Game_Server
         UpdateQuestLog,
         Attacked,
         Respawned,
-        Heal
+        Heal,
+        StompResponse
     }
     public enum ServerSendPacketNumbers
     {
@@ -666,6 +667,7 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(Damage);
                 buffer.WriteInteger(npc.Current_HP);
                 buffer.WriteByte(Crit ? (byte)1 : (byte)0);
+                if (Crit) Log.log("A Crit happened! : " + Damage.ToString(), Log.LogType.GENERAL);
                 Quest_Log ql = World.instance.GetQuestLogByNPCID(Character_ID, npc.NPC_ID);
                 if (ql != null && npc.Current_HP <= 0)
                 {
@@ -773,6 +775,32 @@ namespace Project_X_Game_Server
             catch (Exception e)
             {
                 Log.log("Building Heal packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
+        public static void StompResponse(int index, List<DamageResponse> value)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.StompResponse, ref buffer);
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
+
+                buffer.WriteInteger(value.Count);
+                for (int i = 0; i < value.Count; i++)
+                {
+                    buffer.WriteInteger(value[i].NPC_Entity_ID);
+                    buffer.WriteInteger(value[i].New_HP);
+                    buffer.WriteInteger(value[i].Damage);
+                    buffer.WriteByte(value[i].Crit ? (byte)1 : (byte)0);
+                }
+
+                Log.log("Sending Stomp Response packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.StompResponse.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Stomp Response packet failed. > " + e.Message, Log.LogType.ERROR);
                 return;
             }
         }

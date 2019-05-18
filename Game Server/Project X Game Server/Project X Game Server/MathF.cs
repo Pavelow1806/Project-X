@@ -6,8 +6,19 @@ using System.Threading.Tasks;
 
 namespace Project_X_Game_Server
 {
-    class MathF
+    public class MathF
     {
+        private static long LastTick;
+        public static float deltaTime
+        {
+            get
+            {
+                long CurrentTick = Environment.TickCount;
+                long Result = CurrentTick - LastTick;
+                LastTick = CurrentTick;
+                return Result / 1000.0f;
+            }
+        }
         public static float Distance(Entity e1, Entity e2)
         {
             if (e1 == null || e2 == null)
@@ -16,13 +27,44 @@ namespace Project_X_Game_Server
             }
             return Vector3.Distance(e1.position, e2.position);
         }
+        public static float Distance(Entity e1, Vector3 e2)
+        {
+            if (e1 == null || e2 == null)
+            {
+                return 999.0f;
+            }
+            return Vector3.Distance(e1.position, e2);
+        }
+        public static void MoveTowards(Entity e, Entity target, float Step)
+        {
+            if (e == null || target == null)
+            {
+                return;
+            }
+            e.position = e.position + (target.position - e.position).normalized * Step;
+        }
+        public static void MoveTowards(Entity e, Vector3 target, float Step)
+        {
+            if (e == null)
+            {
+                return;
+            }
+            e.position = e.position + (target - e.position).normalized * Step;
+        }
         public static int Damage(int Strength, int Agility, int BloodMultiplier, out bool Crit)
         {
             Random random = new Random();
 
-            int RandDamage = random.Next((int)(Strength * 1.0f), (int)(Strength * 2.0f));
-            Crit = (random.Next(0, 100) >= 50 - Agility ? true : false);
-            return (Crit ? (RandDamage * BloodMultiplier) : (RandDamage * 2 * BloodMultiplier));
+            int RandDamage = random.Next((int)(Strength * 0.9f), (int)(Strength * 1.1f));
+            Crit = (random.Next(0, 100) >= 90 - Agility ? true : false);
+            return (Crit ? (RandDamage * 2 * BloodMultiplier) : (RandDamage * BloodMultiplier));
+        }
+        public static int SpellDamage(int MinDamage, int MaxDamage, int CritChance, out bool Crit)
+        {
+            Random random = new Random();
+            int RandDamage = random.Next(MinDamage, MaxDamage);
+            Crit = (random.Next(0, 100) >= 100 - CritChance ? true : false);
+            return (Crit ? (RandDamage * 2) : (RandDamage));
         }
         public static void LookAt(Entity baseEntity, Entity lookAtEntity)
         {
@@ -37,6 +79,20 @@ namespace Project_X_Game_Server
         public static float RadiansToDegrees(float r)
         {
             return (float)(180.0f / Math.PI) * r;
+        }
+    }
+    public class DamageResponse
+    {
+        public int NPC_Entity_ID = -1;
+        public int Damage = 0;
+        public bool Crit = false;
+        public int New_HP = -1;
+        public DamageResponse(int npc_Entity_ID, int damage, bool crit, int new_HP)
+        {
+            NPC_Entity_ID = npc_Entity_ID;
+            Damage = damage;
+            Crit = crit;
+            New_HP = new_HP;
         }
     }
     public class Vector3
@@ -106,6 +162,18 @@ namespace Project_X_Game_Server
         public static bool operator !=(Vector3 v1, Vector3 v2)
         {
             return (v1.x != v2.x || v1.y != v2.y || v1.z != v2.z);
+        }
+        public static Vector3 operator *(Vector3 v1, Vector3 v2)
+        {
+            return new Vector3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+        }
+        public static Vector3 operator *(Vector3 v1, float f)
+        {
+            return new Vector3(v1.x * f, v1.y * f, v1.z * f);
+        }
+        public static Vector3 operator +(Vector3 v1, Vector3 v2)
+        {
+            return new Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
         }
     }
     public class Quaternion
