@@ -9,6 +9,7 @@ namespace Project_X_Game_Server
     class Client : Connection
     {
         public string Email = "";
+        public string Version = "";
         public bool LoggedIn = false;
         public int Character_ID = -1;
         public DateTime LoggedInTime = default(DateTime);
@@ -199,6 +200,7 @@ namespace Project_X_Game_Server
             {
                 SendData.LogActivity(Character_ID, Activity.LOGIN, SessionID);
                 Username = "";
+                Version = "";
                 Email = "";
                 SessionID = "";
                 Player player = null;

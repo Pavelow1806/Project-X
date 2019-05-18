@@ -21,7 +21,8 @@ namespace Project_X_Game_Server
         Respawn,
         Stomp,
         Blood,
-        Heal
+        Heal,
+        ClientVersion
     }
     public enum LoginServerProcessPacketNumbers
     {
@@ -586,10 +587,18 @@ namespace Project_X_Game_Server
                     npc.TargetType = EntityType.Player;
                     npc.TargetID = Character_ID;
                     npc.AnimState.Attacking = true;
-                    int Damage = MathF.Damage(player.Strength, player.Agility, player.BloodMultiplier);
+                    bool Crit = false;
+                    int Damage = MathF.Damage(player.Strength, player.Agility, player.BloodMultiplier, out Crit);
                     npc.Current_HP -= Damage;
                     player.AnimState.Attacking = true;
-                    SendData.AttackResponse(index, player.Character_ID, npc, Damage);
+                    if (Network.instance.Clients[index].Version == "")
+                    {
+                        SendData.AttackResponse(index, player.Character_ID, npc, Damage);
+                    }
+                    else
+                    {
+                        SendData.AttackResponseNew(index, player.Character_ID, npc, Damage, Crit);
+                    }
                 }
             }
         }
@@ -672,10 +681,29 @@ namespace Project_X_Game_Server
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteBytes(data);
             ReadHeader(ref buffer);
+            int Healed = 0;
+            if (World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP + World.HealAmount > World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP)
+            {
+                int Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP;
+                int Max_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
+                Healed = Max_HP - Current_HP;
+                World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
+            }
+            else
+            {
+                World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP += World.HealAmount;
+                Healed = World.HealAmount;
+            }
 
-            World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP += World.HealAmount;
-
-            SendData.Heal(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP, World.HealAmount);
+            SendData.Heal(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP, Healed);
+        }
+        private static void ClientVersion(ConnectionType type, int index, byte[] data)
+        {
+            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+            buffer.WriteBytes(data);
+            ReadHeader(ref buffer);
+            string Version = buffer.ReadString();
+            Network.instance.Clients[index].Version = Version;
         }
         #endregion
     }

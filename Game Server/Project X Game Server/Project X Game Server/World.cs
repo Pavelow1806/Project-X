@@ -155,7 +155,8 @@ namespace Project_X_Game_Server
                                 if (DateTime.Now >= npc.NextAttack && npc.TargetID > 0 &&
                                     players[npc.TargetID].Current_HP > 0)
                                 {
-                                    int Damage = MathF.Damage(npc.Strength, npc.Agility, npc.BloodMultiplier);
+                                    bool Crit = false;
+                                    int Damage = MathF.Damage(npc.Strength, npc.Agility, npc.BloodMultiplier, out Crit);
                                     players[npc.TargetID].Current_HP -= Damage;
                                     SendData.Attacked(Network.instance.GetIndex(npc.TargetID), players[npc.TargetID].Current_HP, Damage);
                                     npc.NextAttack = DateTime.Now.AddSeconds(GlobalAttackSpeed);

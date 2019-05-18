@@ -16,12 +16,12 @@ namespace Project_X_Game_Server
             }
             return Vector3.Distance(e1.position, e2.position);
         }
-        public static int Damage(int Strength, int Agility, int BloodMultiplier)
+        public static int Damage(int Strength, int Agility, int BloodMultiplier, out bool Crit)
         {
             Random random = new Random();
 
             int RandDamage = random.Next((int)(Strength * 1.0f), (int)(Strength * 2.0f));
-            bool Crit = (random.Next(0, 100) >= 50 - Agility ? true : false);
+            Crit = (random.Next(0, 100) >= 50 - Agility ? true : false);
             return (Crit ? (RandDamage * BloodMultiplier) : (RandDamage * 2 * BloodMultiplier));
         }
         public static void LookAt(Entity baseEntity, Entity lookAtEntity)

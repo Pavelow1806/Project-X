@@ -653,6 +653,42 @@ namespace Project_X_Game_Server
                 return;
             }
         }
+        public static void AttackResponseNew(int index, int Character_ID, NPC npc, int Damage, bool Crit)
+        {
+            try
+            {
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                BuildBasePacket((int)ClientSendPacketNumbers.AttackResponse, ref buffer);
+                buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
+
+                buffer.WriteInteger(Character_ID);
+                buffer.WriteInteger(npc.Entity_ID);
+                buffer.WriteInteger(Damage);
+                buffer.WriteInteger(npc.Current_HP);
+                buffer.WriteByte(Crit ? (byte)1 : (byte)0);
+                Quest_Log ql = World.instance.GetQuestLogByNPCID(Character_ID, npc.NPC_ID);
+                if (ql != null && npc.Current_HP <= 0)
+                {
+                    ql.Increment();
+                    buffer.WriteByte(1);
+                    buffer.WriteInteger(ql.Quest_ID);
+                    buffer.WriteInteger(ql.ObjectiveProgress);
+                    buffer.WriteInteger((int)ql.Status);
+                }
+                else
+                {
+                    buffer.WriteByte(0);
+                }
+
+                Log.log("Sending Attack Response packet to client..", Log.LogType.SENT);
+                sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.AttackResponse.ToString(), index, buffer.ToArray());
+            }
+            catch (Exception e)
+            {
+                Log.log("Building Attack Response packet failed. > " + e.Message, Log.LogType.ERROR);
+                return;
+            }
+        }
         public static void UpdateQuestLog(int index, int Quest_ID, int Quest_Log_ID, int NPC_Entity_ID, QuestStatus status, int Progress, int Objective)
         {
             try

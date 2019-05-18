@@ -1,0 +1,14 @@
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.csproj.CoreCompileInputs.cache
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Project X Game Server.exe.config
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Project X Game Server.exe
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Project X Game Server.pdb
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\ByteBuffer.dll
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Google.Protobuf.dll
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\MySql.Data.dll
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\ByteBuffer.pdb
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Google.Protobuf.pdb
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\Google.Protobuf.xml
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\bin\Release\MySql.Data.xml
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.csproj.CopyComplete
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.exe
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.pdb
