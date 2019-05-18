@@ -29,7 +29,7 @@ namespace Project_X_Game_Server
         }
         public static float Distance(Entity e1, Vector3 e2)
         {
-            if (e1 == null || e2 == null)
+            if (e1 == null)
             {
                 return 999.0f;
             }

@@ -12,3 +12,4 @@ C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Proj
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.csproj.CopyComplete
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.exe
 C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.pdb
+C:\Users\james\Documents\GitHub\Project-X\Game Server\Project X Game Server\Project X Game Server\obj\Release\Project X Game Server.csprojAssemblyReference.cache
