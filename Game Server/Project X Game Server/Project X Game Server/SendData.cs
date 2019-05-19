@@ -330,40 +330,40 @@ namespace Project_X_Game_Server
             sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             Log.log("World Packet: Sent Players.", Log.LogType.SUCCESS);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
             buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.NPCs);
             // NPCs
-            if (Network.instance.Clients[index].Version != "")
-                buffer.WriteInteger(World.instance.NPCsInWorld.Count);
-            else
-                buffer.WriteInteger(World.instance.GetOriginalNPCCount());
+            //if (Network.instance.Clients[index].Version != "")
+            buffer.WriteInteger(World.instance.NPCsInWorld.Count);
+            //else
+            //    buffer.WriteInteger(World.instance.GetOriginalNPCCount());
             foreach (NPC npc in World.instance.NPCsInWorld)
             {
-                if (Network.instance.Clients[index].Version != "" || (Network.instance.Clients[index].Version == "" && npc.NPC_ID != 12))
-                {
-                    buffer.WriteInteger(npc.NPC_ID);
-                    buffer.WriteInteger(npc.Entity_ID);
-                    buffer.WriteString(npc.Name);
-                    buffer.WriteInteger((int)npc.gender);
-                    buffer.WriteInteger((int)npc.Status);
-                    buffer.WriteInteger(npc.Level);
-                    buffer.WriteInteger(npc.Current_HP);
-                    buffer.WriteInteger(npc.Max_HP);
-                    buffer.WriteFloat(npc.position.x);
-                    buffer.WriteFloat(npc.position.y);
-                    buffer.WriteFloat(npc.position.z);
-                    buffer.WriteFloat(npc.r);
-                    buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
-                }
+                //if (Network.instance.Clients[index].Version != "" || (Network.instance.Clients[index].Version == "" && npc.NPC_ID != 12))
+                //{
+                buffer.WriteInteger(npc.NPC_ID);
+                buffer.WriteInteger(npc.Entity_ID);
+                buffer.WriteString(npc.Name);
+                buffer.WriteInteger((int)npc.gender);
+                buffer.WriteInteger((int)npc.Status);
+                buffer.WriteInteger(npc.Level);
+                buffer.WriteInteger(npc.Current_HP);
+                buffer.WriteInteger(npc.Max_HP);
+                buffer.WriteFloat(npc.position.x);
+                buffer.WriteFloat(npc.position.y);
+                buffer.WriteFloat(npc.position.z);
+                buffer.WriteFloat(npc.r);
+                buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
+                //}
             }
             sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             Log.log("World Packet: Sent NPC's.", Log.LogType.SUCCESS);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
@@ -386,7 +386,7 @@ namespace Project_X_Game_Server
             sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             Log.log("World Packet: Sent Collectables.", Log.LogType.SUCCESS);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             buffer = new ByteBuffer.ByteBuffer();
             BuildBasePacket((int)ClientSendPacketNumbers.WorldPacket, ref buffer);
