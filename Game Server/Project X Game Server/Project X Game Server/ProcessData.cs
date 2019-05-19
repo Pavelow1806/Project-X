@@ -225,7 +225,7 @@ namespace Project_X_Game_Server
                             if (!World.instance.NPCs.ContainsKey(NPC_ID))
                             {
                                 World.instance.NPCs.TryAdd(NPC_ID, new NPC(NPC_ID, (NPCStatus)buffer.ReadInteger(), buffer.ReadString(), buffer.ReadInteger(), buffer.ReadInteger(),
-                                    (Gender)buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                                    (Gender)buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added NPC " + i.ToString() + "/" + NPC_Count.ToString(), Log.LogType.RECEIVED);
                         }
@@ -242,7 +242,7 @@ namespace Project_X_Game_Server
                             if (!World.instance.quests.ContainsKey(Quest_ID))
                             {
                                 World.instance.quests.TryAdd(Quest_ID, new Quest(Quest_ID, buffer.ReadString(), buffer.ReadString(), buffer.ReadString(),
-                                    buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
+                                    buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger(), buffer.ReadInteger()));
                             }
                             Log.log(LineNumber, "Processing world request packet.. Added quest " + i.ToString() + "/" + Quest_Count.ToString(), Log.LogType.RECEIVED);
                         }
@@ -504,6 +504,10 @@ namespace Project_X_Game_Server
                             qr = World.instance.GetQuestContentByNPCEntityID(Character_ID, NPC_ID, out Create);
                             SendData.QuestInteractConfirm(index, true, ql.Status, qr.NPC_ID, ql.Quest_ID);
                             SendData.UpdateQuestLog(ql);
+                            if (World.instance.players.ContainsKey(Character_ID))
+                            {
+                                World.instance.players[Character_ID].experience += World.instance.quests[ql.Quest_ID].Experience;
+                            }
                             // Get the next quest in the series
                             List<Quest> q = World.instance.GetAvailableQuests(Character_ID);
                             if (q != null && q.Count > 0)
@@ -568,38 +572,49 @@ namespace Project_X_Game_Server
         }
         private static void Attack(ConnectionType type, int index, byte[] data)
         {
-            ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
-            buffer.WriteBytes(data);
-            ReadHeader(ref buffer);
-            int Character_ID = buffer.ReadInteger();
-            int NPC_Entity_ID = buffer.ReadInteger();
-            Player player = World.instance.players[Character_ID];
-            NPC npc = World.instance.GetNPCByEntityID(NPC_Entity_ID);
-            if (player != null && npc != null)
+            try
             {
-                if (MathF.Distance(player, npc) <= World.InteractionDistance && 
-                    (npc.Status == NPCStatus.AGGRESSIVE || npc.Status == NPCStatus.NEUTRAL || npc.Status == NPCStatus.BOSS) &&
-                    npc.Current_HP > 0 && DateTime.Now > player.NextAttack)
+                ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
+                buffer.WriteBytes(data);
+                ReadHeader(ref buffer);
+                int Character_ID = buffer.ReadInteger();
+                int NPC_Entity_ID = buffer.ReadInteger();
+                Player player = World.instance.players[Character_ID];
+                NPC npc = World.instance.GetNPCByEntityID(NPC_Entity_ID);
+                if (player != null && npc != null)
                 {
-                    player.NextAttack = DateTime.Now.AddSeconds(World.GlobalAttackSpeed);
-                    player.InCombat = true;
-                    npc.InCombat = true;
-                    npc.TargetType = EntityType.Player;
-                    npc.TargetID = Character_ID;
-                    npc.AnimState.Attacking = true;
-                    bool Crit = false;
-                    int Damage = MathF.Damage(player.Strength, player.Agility, player.BloodMultiplier, out Crit);
-                    npc.Current_HP -= Damage;
-                    player.AnimState.Attacking = true;
-                    if (Network.instance.Clients[index].Version == "")
+                    if (MathF.Distance(player, npc) <= World.InteractionDistance &&
+                        (npc.Status == NPCStatus.AGGRESSIVE || npc.Status == NPCStatus.NEUTRAL || npc.Status == NPCStatus.BOSS) &&
+                        npc.Current_HP > 0 && DateTime.Now > player.NextAttack)
                     {
-                        SendData.AttackResponse(index, player.Character_ID, npc, Damage);
-                    }
-                    else
-                    {
-                        SendData.AttackResponseNew(index, player.Character_ID, npc, Damage, Crit);
+                        if (!npc.PlayerCredit.Contains(player.Character_ID))
+                        {
+                            npc.PlayerCredit.Add(player.Character_ID);
+                        }
+                        player.NextAttack = DateTime.Now.AddSeconds(World.GlobalAttackSpeed);
+                        player.InCombat = true;
+                        npc.InCombat = true;
+                        npc.TargetType = EntityType.Player;
+                        npc.TargetID = Character_ID;
+                        npc.AnimState.Attacking = true;
+                        bool Crit = false;
+                        int Damage = MathF.Damage(player.Strength, player.Agility, player.BloodMultiplier, out Crit);
+                        npc.Current_HP -= Damage;
+                        player.AnimState.Attacking = true;
+                        if (Network.instance.Clients[index].Version == "")
+                        {
+                            SendData.AttackResponse(index, player.Character_ID, npc, Damage);
+                        }
+                        else
+                        {
+                            SendData.AttackResponseNew(index, player.Character_ID, npc, Damage, Crit);
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.log("An error occurred when processing an attack request: " + e.Message, Log.LogType.ERROR);
             }
         }
         private static void PacketReceived(ConnectionType type, int index, byte[] data)
@@ -664,51 +679,62 @@ namespace Project_X_Game_Server
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteBytes(data);
             ReadHeader(ref buffer);
-            List<DamageResponse> result = new List<DamageResponse>();
-            foreach (NPC npc in World.instance.NPCsInWorld)
+            if (DateTime.Now > World.instance.players[Network.instance.Clients[index].Character_ID].StompCooldownTime)
             {
-                if (npc.Status != NPCStatus.FRIENDLY && MathF.Distance(npc, World.instance.players[Network.instance.Clients[index].Character_ID]) <= World.InteractionDistance)
+                List<DamageResponse> result = new List<DamageResponse>();
+                foreach (NPC npc in World.instance.NPCsInWorld)
                 {
-                    bool crit = false;
-                    int dmg = MathF.SpellDamage(World.StompMinDamage, World.StompMaxDamage, World.StompCritChance, out crit);
-                    npc.Current_HP -= dmg;
-                    result.Add(new DamageResponse(npc.Entity_ID, dmg, crit, npc.Current_HP));
+                    if (npc.Status != NPCStatus.FRIENDLY && MathF.Distance(npc, World.instance.players[Network.instance.Clients[index].Character_ID]) <= World.InteractionDistance)
+                    {
+                        bool crit = false;
+                        int dmg = MathF.SpellDamage(World.StompMinDamage, World.StompMaxDamage, World.StompCritChance, out crit);
+                        npc.Current_HP -= dmg;
+                        result.Add(new DamageResponse(npc.Entity_ID, dmg, crit, npc.Current_HP));
+                    }
                 }
+                if (Network.instance.Clients[index].Version != "")
+                {
+                    SendData.StompResponse(index, result);
+                }
+                World.instance.players[Network.instance.Clients[index].Character_ID].StompCooldownTime = DateTime.Now.AddSeconds(World.SpellCooldown);
             }
-            if (Network.instance.Clients[index].Version != "")
-            {
-                SendData.StompResponse(index, result);
-            }            
         }
         private static void Blood(ConnectionType type, int index, byte[] data)
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteBytes(data);
             ReadHeader(ref buffer);
-
-            World.instance.players[Network.instance.Clients[index].Character_ID].BloodMultiplier = 2;
-            World.instance.players[Network.instance.Clients[index].Character_ID].BloodExpire = DateTime.Now.AddSeconds(5);
+            if (DateTime.Now > World.instance.players[Network.instance.Clients[index].Character_ID].BloodCooldownTime)
+            {
+                World.instance.players[Network.instance.Clients[index].Character_ID].BloodMultiplier = 2;
+                World.instance.players[Network.instance.Clients[index].Character_ID].BloodExpire = DateTime.Now.AddSeconds(5);
+                World.instance.players[Network.instance.Clients[index].Character_ID].BloodCooldownTime = DateTime.Now.AddSeconds(World.SpellCooldown);
+            }
         }
         private static void Heal(ConnectionType type, int index, byte[] data)
         {
             ByteBuffer.ByteBuffer buffer = new ByteBuffer.ByteBuffer();
             buffer.WriteBytes(data);
             ReadHeader(ref buffer);
-            int Healed = 0;
-            if (World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP + World.HealAmount > World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP)
+            if (DateTime.Now > World.instance.players[Network.instance.Clients[index].Character_ID].HealCooldownTime)
             {
-                int Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP;
-                int Max_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
-                Healed = Max_HP - Current_HP;
-                World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
-            }
-            else
-            {
-                World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP += World.HealAmount;
-                Healed = World.HealAmount;
-            }
+                int Healed = 0;
+                if (World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP + World.HealAmount > World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP)
+                {
+                    int Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP;
+                    int Max_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
+                    Healed = Max_HP - Current_HP;
+                    World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP = World.instance.players[Network.instance.Clients[index].Character_ID].Max_HP;
+                }
+                else
+                {
+                    World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP += World.HealAmount;
+                    Healed = World.HealAmount;
+                }
 
-            SendData.Heal(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP, Healed);
+                SendData.Heal(index, World.instance.players[Network.instance.Clients[index].Character_ID].Current_HP, Healed);
+                World.instance.players[Network.instance.Clients[index].Character_ID].HealCooldownTime = DateTime.Now.AddSeconds(World.SpellCooldown);
+            }
         }
         private static void ClientVersion(ConnectionType type, int index, byte[] data)
         {

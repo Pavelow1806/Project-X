@@ -161,6 +161,7 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(npc.Value.HP);
                     buffer.WriteInteger(npc.Value.Strength);
                     buffer.WriteInteger(npc.Value.Agility);
+                    buffer.WriteInteger(npc.Value.Experience);
                     Log.log(LineNumber, "Sending tbl_NPC.. NPC ID " + npc.Key.ToString() + "/" + Data.tbl_NPC.Count.ToString(), Log.LogType.SENT);
                 }
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());
@@ -190,6 +191,7 @@ namespace Project_X_Synchronization_Server
                     buffer.WriteInteger(quest.Value.Start_Requirement_Quest_ID);
                     buffer.WriteInteger(quest.Value.Item_Objective_ID);
                     buffer.WriteInteger(quest.Value.NPC_Objective_ID);
+                    buffer.WriteInteger(quest.Value.Experience);
                     Log.log(LineNumber, "Sending tbl_Quests.. Quest ID " + quest.Key.ToString() + "/" + Data.tbl_Quests.Count.ToString(), Log.LogType.SENT);
                 }
                 sendData(ConnectionType.GAMESERVER, GameServerSendPacketNumbers.WorldRequest.ToString(), buffer.ToArray());

@@ -26,6 +26,7 @@ namespace Project_X_Game_Server
         public static int StompMaxDamage = 20;
         public static int StompCritChance = 20;
         public static int BloodDamageIncrease = 20;
+        public static int SpellCooldown = 10;
         private static DateTime NextTick = default(DateTime);
         private int entityCounter = 0;
         public int EntityCounter
@@ -104,7 +105,8 @@ namespace Project_X_Game_Server
                                 NPCs[spawn.Value.NPC_ID].gender,
                                 NPCs[spawn.Value.NPC_ID].Max_HP,
                                 NPCs[spawn.Value.NPC_ID].Strength,
-                                NPCs[spawn.Value.NPC_ID].Agility
+                                NPCs[spawn.Value.NPC_ID].Agility,
+                                NPCs[spawn.Value.NPC_ID].Experience
                             )
                         );
                         NPCsInWorld[i_npc].position.x = spawn.Value.Pos_X;
@@ -150,6 +152,12 @@ namespace Project_X_Game_Server
                                 players[npc.TargetID].InCombat = false;
                             npc.InCombat = false;
                             npc.TargetID = -1;
+                            foreach (int id in npc.PlayerCredit)
+                            {
+                                if (players.ContainsKey(id))
+                                    players[id].experience += npc.Experience;
+                            }
+                            npc.PlayerCredit = new ConcurrentBag<int>();
                             npc.r = spawns[npc.Spawn_ID].Rotation_Y;
                             npc.TargetType = EntityType.NONE;
                             npc.Active = false;
@@ -176,6 +184,7 @@ namespace Project_X_Game_Server
                             }
                             else if (!players[npc.TargetID].InWorld && npc.InCombat && (MathF.Distance(npc, players[npc.TargetID]) > ResetDistance || MathF.Distance(npc, npc.spawn) > ResetDistance))
                             {
+                                npc.PlayerCredit = new ConcurrentBag<int>();
                                 players[npc.TargetID].InCombat = false;
                                 npc.InCombat = false;
                                 npc.r = spawns[npc.Spawn_ID].Rotation_Y;
@@ -186,6 +195,7 @@ namespace Project_X_Game_Server
                             }
                             else
                             {
+                                npc.PlayerCredit = new ConcurrentBag<int>();
                                 players[npc.TargetID].InCombat = false;
                                 npc.InCombat = false;
                                 npc.r = spawns[npc.Spawn_ID].Rotation_Y;
@@ -197,6 +207,7 @@ namespace Project_X_Game_Server
                         }
                         else if (npc.TargetID == -1 && npc.Active)
                         {
+                            npc.PlayerCredit = new ConcurrentBag<int>();
                             npc.InCombat = false;
                             npc.r = spawns[npc.Spawn_ID].Rotation_Y;
                             npc.TargetID = -1;
@@ -625,6 +636,41 @@ namespace Project_X_Game_Server
             {
                 NPCsInWorld[i].BuildBuffer(ref buffer);
             }
+        }
+        public Experience GetLevel(int Experience)
+        {
+            Experience result = new Experience(0, 0, 0, 0, 0, 0);
+            foreach (KeyValuePair<int, Experience> xp in experience_levels)
+            {
+                if (Experience >= xp.Value.experience && xp.Value.Level > result.Level)
+                {
+                    result = xp.Value;
+                }
+            }
+            return result;
+        }
+        public int GetLevelCriteria(int Level)
+        {
+            foreach (KeyValuePair<int, Experience> xp in experience_levels)
+            {
+                if (xp.Value.Level == Level)
+                {
+                    return xp.Value.experience;
+                }
+            }
+            return -1;
+        }
+        public int GetOriginalNPCCount()
+        {
+            int result = 0;
+            foreach (NPC npc in NPCsInWorld)
+            {
+                if (npc.NPC_ID != 12)
+                {
+                    ++result;
+                }
+            }
+            return result;
         }
     }
 }

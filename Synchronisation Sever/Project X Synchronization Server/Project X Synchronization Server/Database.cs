@@ -270,7 +270,7 @@ namespace Project_X_Synchronization_Server
                 {
                     Data.tbl_Quests.TryAdd(reader.GetInt32("Quest_ID"), new _Quests(reader.GetInt32("Quest_ID"), reader.GetString("Title"), reader.GetString("Start_Text"), reader.GetString("End_Text"),
                         reader.GetInt32("Reward_ID"), reader.GetInt32("NPC_Start_ID"), reader.GetInt32("NPC_End_ID"), reader.GetInt32("Objective_Target"), reader.GetInt32("Start_Requirement_Quest_ID"),
-                        reader.GetInt32("Item_Objective_ID"), reader.GetInt32("NPC_Objective_ID")));
+                        reader.GetInt32("Item_Objective_ID"), reader.GetInt32("NPC_Objective_ID"), reader.GetInt32("Experience")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {
@@ -318,7 +318,7 @@ namespace Project_X_Synchronization_Server
                 while (reader.Read())
                 {
                     Data.tbl_NPC.TryAdd(reader.GetInt32("NPC_ID"), new _NPC(reader.GetInt32("NPC_ID"), reader.GetInt32("Status"), reader.GetString("Name"), reader.GetInt32("Level"),
-                        reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time"), reader.GetInt32("Strength"), reader.GetInt32("Agility")));
+                        reader.GetInt32("HP"), reader.GetInt32("Gender"), reader.GetInt32("Respawn_Time"), reader.GetInt32("Strength"), reader.GetInt32("Agility"), reader.GetInt32("Experience")));
                     ++RecordNumber;
                     if (SubLineNumber == -1)
                     {

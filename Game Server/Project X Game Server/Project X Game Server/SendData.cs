@@ -186,6 +186,12 @@ namespace Project_X_Game_Server
                 buffer.WriteFloat(player.Camera_Pos_Y);
                 buffer.WriteFloat(player.Camera_Pos_Z);
                 buffer.WriteFloat(player.Camera_Rotation_Y);
+                // Experience
+                buffer.WriteInteger(player.Level);
+                buffer.WriteInteger(player.experience);
+                buffer.WriteInteger(player.Max_HP);
+                buffer.WriteInteger(player.Strength);
+                buffer.WriteInteger(player.Agility);
 
                 sendData(ConnectionType.SYNCSERVER, SyncServerSendPacketNumbers.UpdatePlayerData.ToString(), -1, buffer.ToArray());
             }
@@ -331,22 +337,28 @@ namespace Project_X_Game_Server
             buffer.WriteString(DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
             buffer.WriteInteger((int)WorldSplit.NPCs);
             // NPCs
-            buffer.WriteInteger(World.instance.NPCsInWorld.Count);
+            if (Network.instance.Clients[index].Version != "")
+                buffer.WriteInteger(World.instance.NPCsInWorld.Count);
+            else
+                buffer.WriteInteger(World.instance.GetOriginalNPCCount());
             foreach (NPC npc in World.instance.NPCsInWorld)
             {
-                buffer.WriteInteger(npc.NPC_ID);
-                buffer.WriteInteger(npc.Entity_ID);
-                buffer.WriteString(npc.Name);
-                buffer.WriteInteger((int)npc.gender);
-                buffer.WriteInteger((int)npc.Status);
-                buffer.WriteInteger(npc.Level);
-                buffer.WriteInteger(npc.Current_HP);
-                buffer.WriteInteger(npc.Max_HP);
-                buffer.WriteFloat(npc.position.x);
-                buffer.WriteFloat(npc.position.y);
-                buffer.WriteFloat(npc.position.z);
-                buffer.WriteFloat(npc.r);
-                buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
+                if (Network.instance.Clients[index].Version != "" || (Network.instance.Clients[index].Version == "" && npc.NPC_ID != 12))
+                {
+                    buffer.WriteInteger(npc.NPC_ID);
+                    buffer.WriteInteger(npc.Entity_ID);
+                    buffer.WriteString(npc.Name);
+                    buffer.WriteInteger((int)npc.gender);
+                    buffer.WriteInteger((int)npc.Status);
+                    buffer.WriteInteger(npc.Level);
+                    buffer.WriteInteger(npc.Current_HP);
+                    buffer.WriteInteger(npc.Max_HP);
+                    buffer.WriteFloat(npc.position.x);
+                    buffer.WriteFloat(npc.position.y);
+                    buffer.WriteFloat(npc.position.z);
+                    buffer.WriteFloat(npc.r);
+                    buffer.WriteInteger((int)World.instance.GetQuestStateByNPC(Network.instance.Clients[index].Character_ID, npc.NPC_ID));
+                }
             }
             sendData(ConnectionType.CLIENT, ClientSendPacketNumbers.WorldPacket.ToString(), index, buffer.ToArray());
             Log.log("World Packet: Sent NPC's.", Log.LogType.SUCCESS);
@@ -431,7 +443,12 @@ namespace Project_X_Game_Server
                 buffer.WriteInteger(Character.Current_HP);
                 buffer.WriteInteger(Character.Strength);
                 buffer.WriteInteger(Character.Agility);
-                buffer.WriteInteger(Character.Experience);
+                buffer.WriteInteger(Character.experience);
+                if (Network.instance.Clients[index].Version != "")
+                {
+                    buffer.WriteInteger(World.instance.GetLevelCriteria(Character.Level));
+                    buffer.WriteInteger(World.instance.GetLevelCriteria(Character.Level + 1));
+                }
                 // Quest Log
                 List<Quest_Log> ql = World.instance.GetQuestLog(Character.Character_ID);
                 buffer.WriteInteger(ql.Count);
@@ -494,6 +511,16 @@ namespace Project_X_Game_Server
                         buffer.WriteInteger(player.Character_ID);
                         buffer.WriteInteger(player.Entity_ID);
                         buffer.WriteInteger(player.Level);
+                        if (Network.instance.Clients[index].Version != "")
+                        {
+                            buffer.WriteInteger(player.Strength);
+                            buffer.WriteInteger(player.Agility);
+                            buffer.WriteInteger(player.Max_HP);
+                            buffer.WriteInteger(player.Current_HP);
+                            buffer.WriteInteger(player.experience);
+                            buffer.WriteInteger(World.instance.GetLevelCriteria(player.Level));
+                            buffer.WriteInteger(World.instance.GetLevelCriteria(player.Level + 1));
+                        }
                         break;
                     default:
                         break;

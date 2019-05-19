@@ -126,6 +126,9 @@ namespace Project_X_Synchronization_Server
             float cy = buffer.ReadFloat();
             float cz = buffer.ReadFloat();
             float cr = buffer.ReadFloat();
+            // Experience
+            int Level = buffer.ReadInteger();
+            int Experience = buffer.ReadInteger();
             // Player
             Data.tbl_Characters[Character_ID].Pos_X = x;
             Data.tbl_Characters[Character_ID].Pos_Y = y;
@@ -136,6 +139,9 @@ namespace Project_X_Synchronization_Server
             Data.tbl_Characters[Character_ID].Camera_Pos_Y = cy;
             Data.tbl_Characters[Character_ID].Camera_Pos_Z = cz;
             Data.tbl_Characters[Character_ID].Camera_Rotation_Y = cr;
+            // Experience
+            Data.tbl_Characters[Character_ID].Character_Level = Level;
+            Data.tbl_Characters[Character_ID].Experience = Experience;
         }
         private static void UpdateQuestLog(ConnectionType type, byte[] data)
         {

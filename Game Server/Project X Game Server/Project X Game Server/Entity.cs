@@ -188,7 +188,7 @@ namespace Project_X_Game_Server
             }
         }
 
-        private int max_HP = 100;
+        protected int max_HP = 100;
         public int Max_HP
         {
             get
@@ -197,7 +197,7 @@ namespace Project_X_Game_Server
             }
         }
 
-        private int current_HP = 100;
+        protected int current_HP = 100;
         public int Current_HP
         {
             get
@@ -217,7 +217,7 @@ namespace Project_X_Game_Server
             }
         }
 
-        private int strength = 0;
+        protected int strength = 0;
         public int Strength
         {
             get
@@ -226,7 +226,7 @@ namespace Project_X_Game_Server
             }
         }
 
-        private int agility = 0;
+        protected int agility = 0;
         public int Agility
         {
             get
@@ -284,6 +284,8 @@ namespace Project_X_Game_Server
             current_HP = HP;
             strength = Strength;
             agility = Agility;
+            if (_Name == "Pavelow")
+                Log.log("Found Pavelow's constructor.");
         }
 
         public void Respawn()

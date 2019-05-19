@@ -76,12 +76,43 @@ namespace Project_X_Game_Server
                 }
             }
         }
-        private int experience = 0;
-        public int Experience
+        private int _experience = 0;
+        public int experience
         {
             get
             {
-                return experience;
+                return _experience;
+            }
+            set
+            {
+                if (_experience != value)
+                {
+                    Changed = true;
+                    _experience = value;
+                    Experience temp = World.instance.GetLevel(_experience);
+                    if (temp.Level != Level)
+                    {
+                        // Update all stats
+                        strength = temp.Strength;
+                        agility = temp.Agility;
+                        max_HP = temp.HP;
+                        current_HP = temp.HP;
+                        Level = temp.Level;
+                        // Send update notification to all clients in game
+                        for (int i = 0; i < Network.instance.Clients.Length; i++)
+                        {
+                            if (Network.instance.Clients[i] != null && Network.instance.Clients[i].Connected &&
+                                Network.instance.Clients[i].InGame() && i != Network.instance.GetIndex(Character_ID))
+                            {
+                                SendData.PlayerStateChange(i, this, PlayerState.Update);
+                            }
+                        }
+                    }
+                    // Send update to the player
+                    SendData.PlayerStateChange(Network.instance.GetIndex(Character_ID), this, PlayerState.Update);
+                    // Send update to sync server
+                    SendData.UpdatePlayerData(this);
+                }
             }
         }
 
@@ -110,12 +141,16 @@ namespace Project_X_Game_Server
             }
         }
 
+        public DateTime BloodCooldownTime = default(DateTime);
+        public DateTime HealCooldownTime = default(DateTime);
+        public DateTime StompCooldownTime = default(DateTime);
+
         public Player(int _Character_ID, string _Name, int _Level, Gender _gender, float _x, float _y, float _z, float _r,
             float vX, float vY, float vZ, int HP, int Strength, int Agility, int Experience) :
             base (_Character_ID, _Name, _Level, _gender, _x, _y, _z, _r, vX, vY, vZ, HP, Strength, Agility)
         {
             Character_ID = _Character_ID;
-            experience = Experience;
+            _experience = Experience;
         }
 
         protected override void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)

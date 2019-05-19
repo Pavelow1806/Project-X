@@ -587,6 +587,15 @@ namespace Project_X_Synchronization_Server
             {
                 return health;
             }
+            set
+            {
+                if (health != value)
+                {
+                    Changed = true;
+                    health = value;
+                    SQL = CreateSQL();
+                }
+            }
         }
         private int strength;
         public int Strength
@@ -595,6 +604,15 @@ namespace Project_X_Synchronization_Server
             {
                 return strength;
             }
+            set
+            {
+                if (strength != value)
+                {
+                    Changed = true;
+                    strength = value;
+                    SQL = CreateSQL();
+                }
+            }
         }
         private int agility;
         public int Agility
@@ -602,6 +620,15 @@ namespace Project_X_Synchronization_Server
             get
             {
                 return agility;
+            }
+            set
+            {
+                if (agility != value)
+                {
+                    Changed = true;
+                    agility = value;
+                    SQL = CreateSQL();
+                }
             }
         }
         private int experience;
@@ -755,10 +782,18 @@ namespace Project_X_Synchronization_Server
                 return nPC_Objective_ID;
             }
         }
+        private int experience;
+        public int Experience
+        {
+            get
+            {
+                return experience;
+            }
+        }
 
         public _Quests(int Quest_ID, string Title, string Start_Text, string End_Text, int Reward_ID, 
             int NPC_Start_ID, int NPC_End_ID, int Objective_Target, int Start_Requirement_Quest_ID, 
-            int Item_Objective_ID, int NPC_Objective_ID)
+            int Item_Objective_ID, int NPC_Objective_ID, int _experience)
         {
             quest_ID = Quest_ID;
             title = Title;
@@ -771,6 +806,7 @@ namespace Project_X_Synchronization_Server
             start_Requirement_Quest_ID = Start_Requirement_Quest_ID;
             item_Objective_ID = Item_Objective_ID;
             nPC_Objective_ID = NPC_Objective_ID;
+            experience = _experience;
 
             New = false;
         }
@@ -940,9 +976,17 @@ namespace Project_X_Synchronization_Server
                 return agility;
             }
         }
+        private int experience;
+        public int Experience
+        {
+            get
+            {
+                return experience;
+            }
+        }
 
         public _NPC(int NPC_ID, int Status, string Name, int Level,  
-            int HP, int Gender, int Respawn_Time, int Strength, int Agility)
+            int HP, int Gender, int Respawn_Time, int Strength, int Agility, int Experience)
         {
             nPC_ID = NPC_ID;
             status = Status;
@@ -953,6 +997,7 @@ namespace Project_X_Synchronization_Server
             respawn_Time = Respawn_Time;
             strength = Strength;
             agility = Agility;
+            experience = Experience;
             New = false;
         }
 

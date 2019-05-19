@@ -117,6 +117,7 @@ namespace Project_X_Game_Server
                 return npc_Objective_ID;
             }
         }
+        public int Experience;
         #endregion
 
         protected bool Changed = false;
@@ -125,7 +126,7 @@ namespace Project_X_Game_Server
 
         public Quest(int id, string Title, string Start_text, string End_text, int Reward, 
             int Npc_start_id, int Npc_end_id, int Objective_target, int Start_requirement_quest_id,
-            int Item_objective_id, int Npc_objective_id)
+            int Item_objective_id, int Npc_objective_id, int experience)
         {
             iD = id;
             title = Title;
@@ -138,6 +139,7 @@ namespace Project_X_Game_Server
             start_Requirement_Quest_ID = Start_requirement_quest_id;
             item_Objective_ID = Item_objective_id;
             npc_Objective_ID = Npc_objective_id;
+            Experience = experience;
         }
     }
     public enum QuestStatus

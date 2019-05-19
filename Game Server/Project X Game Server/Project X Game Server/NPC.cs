@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -72,9 +73,11 @@ namespace Project_X_Game_Server
         }
         private DateTime NextSpawnTime = default(DateTime);
         public int Spawn_ID = -1;
+        public int Experience;
+        public ConcurrentBag<int> PlayerCredit = new ConcurrentBag<int>();
 
         public NPC(int ID, NPCStatus Status, string name, int respawn_Time, int level, Gender gender, int HP,
-            int Strength, int Agility) :
+            int Strength, int Agility, int experience) :
             base(ID, name, level, gender, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, HP, Strength, Agility)
         {
             nPC_ID = ID;
@@ -82,6 +85,7 @@ namespace Project_X_Game_Server
             type = EntityType.NPC;
             Respawn_Time = respawn_Time;
             NextSpawnTime = DateTime.Now;
+            Experience = experience;
         }
 
         protected override void BuildTransmission(ref ByteBuffer.ByteBuffer buffer)
