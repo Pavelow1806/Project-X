@@ -9,8 +9,10 @@ cluster and informs the analyst on the best course of action using KPI’s to mo
 on important strategic metrics. 
 
 The client has been developed outside of GitHub in Unity and the exe can be found here: 
+
 Mac:
 https://1drv.ms/u/s!AhRTeukcFugmgcR8fWGq68VMAtc_5w
+(Please note that the client was developed primarily for Windows and therefore there are some errors that I was unable to fix during production due to not owning a Mac)
 
 Windows:
 https://1drv.ms/u/s!AhRTeukcFugmgcR7JWVwVl7PImVPSQ
